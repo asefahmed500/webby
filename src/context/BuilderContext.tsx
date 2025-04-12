@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { defaultPages, Page } from "@/lib/pageData";
 
 export interface Component {
   id: string;
@@ -30,6 +31,14 @@ interface BuilderContextType {
   removeComponent: (id: string) => void;
   previewMode: boolean;
   setPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
+  pages: Page[];
+  setPages: React.Dispatch<React.SetStateAction<Page[]>>;
+  currentPageId: string;
+  setCurrentPageId: React.Dispatch<React.SetStateAction<string>>;
+  addPage: (name: string) => void;
+  removePage: (id: string) => void;
+  publishStatus: "draft" | "published";
+  setPublishStatus: React.Dispatch<React.SetStateAction<"draft" | "published">>;
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -45,6 +54,10 @@ export const useBuilder = () => {
 export const BuilderProvider: React.FC<{ children: ReactNode }> = ({ 
   children 
 }) => {
+  const [pages, setPages] = useState<Page[]>(defaultPages);
+  const [currentPageId, setCurrentPageId] = useState<string>("home");
+  const [publishStatus, setPublishStatus] = useState<"draft" | "published">("draft");
+  
   const [components, setComponents] = useState<Component[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -64,21 +77,38 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
     if (!targetId) {
       setComponents(prev => [...prev, newComponent]);
+      
+      // Also update the component in the current page
+      setPages(prev => prev.map(page => 
+        page.id === currentPageId ? {
+          ...page,
+          components: [...page.components, newComponent]
+        } : page
+      ));
+      
       return;
     }
 
     // Add as a child of the target component
-    setComponents(prev => 
-      prev.map(component => {
-        if (component.id === targetId) {
-          return {
-            ...component,
-            children: [...component.children, newComponent]
-          };
-        }
-        return component;
-      })
-    );
+    const updatedComponents = components.map(component => {
+      if (component.id === targetId) {
+        return {
+          ...component,
+          children: [...component.children, newComponent]
+        };
+      }
+      return component;
+    });
+    
+    setComponents(updatedComponents);
+    
+    // Also update the component in the current page
+    setPages(prev => prev.map(page => 
+      page.id === currentPageId ? {
+        ...page,
+        components: updatedComponents
+      } : page
+    ));
   };
 
   const updateComponent = (id: string, updates: Partial<Component>) => {
@@ -97,7 +127,16 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       });
     };
 
-    setComponents(prev => updateComponentRecursive(prev));
+    const updatedComponents = updateComponentRecursive(components);
+    setComponents(updatedComponents);
+    
+    // Also update the component in the current page
+    setPages(prev => prev.map(page => 
+      page.id === currentPageId ? {
+        ...page,
+        components: updatedComponents
+      } : page
+    ));
   };
 
   const removeComponent = (id: string) => {
@@ -110,11 +149,64 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         }));
     };
 
-    setComponents(prev => removeComponentRecursive(prev));
+    const updatedComponents = removeComponentRecursive(components);
+    setComponents(updatedComponents);
+    
+    // Also update the component in the current page
+    setPages(prev => prev.map(page => 
+      page.id === currentPageId ? {
+        ...page,
+        components: updatedComponents
+      } : page
+    ));
+    
     if (selectedComponent?.id === id) {
       setSelectedComponent(null);
     }
   };
+  
+  // Add a new page
+  const addPage = (name: string) => {
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    const path = id === 'home' ? '/' : `/${id}`;
+    
+    const newPage: Page = {
+      id,
+      name,
+      path,
+      components: [],
+      isHome: false
+    };
+    
+    setPages(prev => [...prev, newPage]);
+    setCurrentPageId(id);
+    setComponents([]);
+    setSelectedComponent(null);
+  };
+  
+  // Remove a page
+  const removePage = (id: string) => {
+    // Don't remove the last page
+    if (pages.length <= 1) return;
+    
+    const updatedPages = pages.filter(page => page.id !== id);
+    setPages(updatedPages);
+    
+    // If the current page is being removed, switch to the first available page
+    if (currentPageId === id) {
+      setCurrentPageId(updatedPages[0].id);
+      setComponents(updatedPages[0].components || []);
+    }
+  };
+  
+  // When changing pages, update the components
+  React.useEffect(() => {
+    const currentPage = pages.find(page => page.id === currentPageId);
+    if (currentPage) {
+      setComponents(currentPage.components || []);
+      setSelectedComponent(null);
+    }
+  }, [currentPageId]);
 
   return (
     <BuilderContext.Provider
@@ -131,7 +223,15 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         updateComponent,
         removeComponent,
         previewMode,
-        setPreviewMode
+        setPreviewMode,
+        pages,
+        setPages,
+        currentPageId,
+        setCurrentPageId,
+        addPage,
+        removePage,
+        publishStatus,
+        setPublishStatus
       }}
     >
       {children}
