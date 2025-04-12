@@ -87,9 +87,28 @@ const PropertyEditor = () => {
             </div>
           </div>
         );
+      case "input":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="placeholder">Placeholder Text</Label>
+              <Input
+                id="placeholder"
+                value={content}
+                onChange={handleContentChange}
+                placeholder="Enter placeholder text"
+              />
+            </div>
+          </div>
+        );
       default:
-        if (selectedComponent.type === "container" || selectedComponent.type === "card" || 
-            selectedComponent.type === "navigation" || selectedComponent.type === "footer") {
+        if (selectedComponent.type === "container" || 
+            selectedComponent.type === "card" || 
+            selectedComponent.type === "navigation" || 
+            selectedComponent.type === "footer" ||
+            selectedComponent.type === "form" ||
+            selectedComponent.type === "testimonial" ||
+            selectedComponent.type === "pricing") {
           return (
             <div className="space-y-4">
               <p className="text-sm text-gray-500">
@@ -136,6 +155,13 @@ const PropertyEditor = () => {
       { label: "Align Items", property: "alignItems" },
       { label: "Gap", property: "gap" },
     ];
+
+    const formStyles = [
+      { label: "Border", property: "border" },
+      { label: "Border Radius", property: "borderRadius" },
+      { label: "Box Shadow", property: "boxShadow" },
+      { label: "Max Width", property: "maxWidth" },
+    ];
     
     // Return different style fields based on component type
     switch (selectedComponent.type) {
@@ -151,6 +177,12 @@ const PropertyEditor = () => {
         return [...layoutStyles, ...borderStyles, ...commonStyles];
       case "image":
         return [...borderStyles, ...commonStyles];
+      case "input":
+        return [...textStyles, ...borderStyles, ...commonStyles];
+      case "form":
+      case "testimonial":
+      case "pricing":
+        return [...formStyles, ...commonStyles, ...layoutStyles];
       default:
         return commonStyles;
     }

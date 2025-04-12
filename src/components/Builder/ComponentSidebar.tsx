@@ -18,7 +18,16 @@ import {
   LayoutDashboard,
   LayoutList,
   Megaphone,
-  Wallet
+  Wallet,
+  FileText,
+  FormInput,
+  Quote,
+  BadgeDollarSign,
+  Lock,
+  UserPlus,
+  Mail,
+  ShoppingBag,
+  CreditCard
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -33,7 +42,16 @@ const iconMap: Record<string, React.ReactNode> = {
   "layout-dashboard": <LayoutDashboard className="h-4 w-4" />,
   "layout-list": <LayoutList className="h-4 w-4" />,
   "megaphone": <Megaphone className="h-4 w-4" />,
-  "wallet": <Wallet className="h-4 w-4" />
+  "wallet": <Wallet className="h-4 w-4" />,
+  "file-text": <FileText className="h-4 w-4" />,
+  "form-input": <FormInput className="h-4 w-4" />,
+  "quote": <Quote className="h-4 w-4" />,
+  "badge-dollar-sign": <BadgeDollarSign className="h-4 w-4" />,
+  "lock": <Lock className="h-4 w-4" />,
+  "user-plus": <UserPlus className="h-4 w-4" />,
+  "mail": <Mail className="h-4 w-4" />,
+  "shopping-bag": <ShoppingBag className="h-4 w-4" />,
+  "credit-card": <CreditCard className="h-4 w-4" />
 };
 
 const ComponentSidebar = () => {

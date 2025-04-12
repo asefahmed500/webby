@@ -40,7 +40,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       return;
     }
     
-    if (componentType && (component.type === "container" || component.type === "card" || component.type === "navigation" || component.type === "footer")) {
+    if (componentType && (component.type === "container" || component.type === "card" || component.type === "navigation" || component.type === "footer" || component.type === "form" || component.type === "testimonial")) {
       addComponent(componentType, component.id);
     }
   };
@@ -51,6 +51,8 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       case "card":
       case "navigation":
       case "footer":
+      case "form":
+      case "testimonial":
         return (
           <div 
             className={cn(
@@ -97,6 +99,34 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
         );
       case "divider":
         return <hr style={component.styles} />;
+      case "input":
+        return (
+          <input 
+            type="text" 
+            placeholder={component.content || "Enter text..."} 
+            style={component.styles} 
+            className={previewMode ? "cursor-text" : "cursor-default"}
+            onClick={(e) => previewMode ? null : e.stopPropagation()}
+            readOnly={!previewMode}
+          />
+        );
+      case "pricing":
+        return (
+          <div style={component.styles} className="pricing-block">
+            {component.children.map((child) => (
+              <DraggableComponent 
+                key={child.id} 
+                component={child} 
+                depth={depth + 1} 
+              />
+            ))}
+            {!previewMode && component.children.length === 0 && (
+              <div className="flex items-center justify-center text-gray-400 text-sm h-[100px]">
+                Pricing component (add content)
+              </div>
+            )}
+          </div>
+        );
       default:
         return <div>Unknown component type: {component.type}</div>;
     }

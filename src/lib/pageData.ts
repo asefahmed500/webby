@@ -28,5 +28,26 @@ export const defaultPages: Page[] = [
     path: "/contact",
     components: [],
     isHome: false
+  },
+  {
+    id: "products",
+    name: "Products",
+    path: "/products",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "login",
+    name: "Login",
+    path: "/login",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "signup",
+    name: "Sign Up",
+    path: "/signup",
+    components: [],
+    isHome: false
   }
 ];
