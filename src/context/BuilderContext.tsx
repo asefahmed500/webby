@@ -1,6 +1,8 @@
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { defaultPages, Page } from "@/lib/pageData";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Component {
   id: string;
@@ -39,6 +41,11 @@ interface BuilderContextType {
   removePage: (id: string) => void;
   publishStatus: "draft" | "published";
   setPublishStatus: React.Dispatch<React.SetStateAction<"draft" | "published">>;
+  websiteId: string | null;
+  setWebsiteId: React.Dispatch<React.SetStateAction<string | null>>;
+  websiteName: string;
+  setWebsiteName: React.Dispatch<React.SetStateAction<string>>;
+  saveWebsite: () => Promise<void>;
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -54,9 +61,12 @@ export const useBuilder = () => {
 export const BuilderProvider: React.FC<{ children: ReactNode }> = ({ 
   children 
 }) => {
+  const { user } = useAuth();
   const [pages, setPages] = useState<Page[]>(defaultPages);
   const [currentPageId, setCurrentPageId] = useState<string>("home");
   const [publishStatus, setPublishStatus] = useState<"draft" | "published">("draft");
+  const [websiteId, setWebsiteId] = useState<string | null>(null);
+  const [websiteName, setWebsiteName] = useState<string>("My Website");
   
   const [components, setComponents] = useState<Component[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
@@ -65,6 +75,58 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   const [previewMode, setPreviewMode] = useState(false);
 
   const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Load website data from local storage on startup
+  useEffect(() => {
+    const savedData = localStorage.getItem("saved-website");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.pages) {
+          setPages(parsedData.pages);
+          if (parsedData.publishStatus) {
+            setPublishStatus(parsedData.publishStatus);
+          }
+          if (parsedData.websiteId) {
+            setWebsiteId(parsedData.websiteId);
+          }
+          if (parsedData.websiteName) {
+            setWebsiteName(parsedData.websiteName);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading saved website:", error);
+      }
+    }
+  }, []);
+
+  // Save to local storage whenever important state changes
+  // In a real app, you'd save to Supabase instead
+  const saveWebsite = async () => {
+    try {
+      const websiteData = {
+        pages,
+        publishStatus,
+        websiteId: websiteId || `website-${Math.random().toString(36).substr(2, 9)}`,
+        websiteName,
+        updatedAt: new Date().toISOString(),
+        userId: user?.id
+      };
+      
+      localStorage.setItem("saved-website", JSON.stringify(websiteData));
+      
+      if (!websiteId) {
+        setWebsiteId(websiteData.websiteId);
+      }
+      
+      // In a real app with Supabase, you'd save to the database here
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error saving website:", error);
+      return Promise.reject(error);
+    }
+  };
 
   const addComponent = (type: string, targetId?: string) => {
     const newComponent: Component = {
@@ -231,7 +293,12 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         addPage,
         removePage,
         publishStatus,
-        setPublishStatus
+        setPublishStatus,
+        websiteId,
+        setWebsiteId,
+        websiteName,
+        setWebsiteName,
+        saveWebsite
       }}
     >
       {children}

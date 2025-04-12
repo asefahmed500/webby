@@ -7,6 +7,17 @@ export interface Page {
   isHome: boolean;
 }
 
+export interface Website {
+  id: string;
+  name: string;
+  description?: string;
+  pages: Page[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  userId?: string; // For when we have authentication
+}
+
 export const defaultPages: Page[] = [
   {
     id: "home",
@@ -51,3 +62,12 @@ export const defaultPages: Page[] = [
     isHome: false
   }
 ];
+
+export const defaultWebsite: Website = {
+  id: "default",
+  name: "My Website",
+  description: "A website built with the Website Builder",
+  pages: defaultPages,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};

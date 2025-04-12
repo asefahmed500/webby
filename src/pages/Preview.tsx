@@ -2,15 +2,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
+import { useAuth } from '@/context/AuthContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit, Home } from 'lucide-react';
 
 const Preview = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const { pageId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   useEffect(() => {
     // Load pages from localStorage
@@ -43,7 +45,15 @@ const Preview = () => {
   }, [pageId, navigate]);
   
   const handleNavigate = (pageId: string) => {
-    navigate(`/preview/${pageId}`);
+    navigate(`/preview/${pageId === 'home' ? '' : pageId}`);
+  };
+
+  const handleEdit = () => {
+    navigate('/');
+  };
+
+  const handleDashboard = () => {
+    navigate('/dashboard');
   };
   
   if (!currentPage) {
@@ -51,7 +61,18 @@ const Preview = () => {
       <div className="h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Website not found</h1>
         <p className="text-gray-600 mb-6">No published website content is available.</p>
-        <Button onClick={() => navigate('/')}>Back to Builder</Button>
+        <div className="flex gap-4">
+          <Button onClick={() => navigate('/')}>
+            <Edit className="h-4 w-4 mr-1" />
+            Create Website
+          </Button>
+          {user && (
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              <Home className="h-4 w-4 mr-1" />
+              Go to Dashboard
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -63,9 +84,9 @@ const Preview = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => navigate('/')}>
+              <Button variant="ghost" onClick={() => user ? handleDashboard() : handleEdit()}>
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Editor
+                {user ? 'Back to Dashboard' : 'Back to Editor'}
               </Button>
               <h1 className="font-medium">Preview Mode</h1>
             </div>
@@ -75,7 +96,7 @@ const Preview = () => {
                 {pages.map(page => (
                   <li key={page.id}>
                     <button
-                      onClick={() => handleNavigate(page.id === 'home' ? '' : page.id)}
+                      onClick={() => handleNavigate(page.id)}
                       className={`px-1 py-2 text-sm ${
                         currentPage.id === page.id 
                           ? 'text-blue-600 border-b-2 border-blue-600' 
@@ -88,6 +109,11 @@ const Preview = () => {
                 ))}
               </ul>
             </nav>
+
+            <Button onClick={handleEdit}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit Website
+            </Button>
           </div>
         </div>
       </header>
@@ -102,6 +128,10 @@ const Preview = () => {
           ) : (
             <div className="text-center py-16">
               <p className="text-gray-500">This page has no content yet.</p>
+              <Button variant="outline" className="mt-4" onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-1" />
+                Add Content
+              </Button>
             </div>
           )}
         </div>

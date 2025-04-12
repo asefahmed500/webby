@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { useBuilder } from "@/context/BuilderContext";
 import { Button } from "@/components/ui/button";
 import PreviewMode from "./PreviewMode";
@@ -13,7 +15,10 @@ import {
   Trash, 
   Download,
   AlertCircle,
-  FileText
+  FileText,
+  User,
+  LogOut,
+  LayoutDashboard
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -26,6 +31,8 @@ import PageManager from "./PageManager";
 const Toolbar = () => {
   const { components, setComponents, previewMode, pages, currentPageId } = useBuilder();
   const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSave = () => {
     const data = JSON.stringify({ pages });
@@ -74,6 +81,20 @@ const Toolbar = () => {
     toast("Website exported successfully!");
   };
 
+  const handleDashboard = () => {
+    navigate("/dashboard");
+  };
+
+  const handleAuth = () => {
+    navigate("/auth");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+    toast.success("Signed out successfully");
+  };
+
   const currentPage = pages.find(page => page.id === currentPageId);
 
   return (
@@ -111,6 +132,11 @@ const Toolbar = () => {
                 <PageManager />
               </SheetContent>
             </Sheet>
+            
+            <Button variant="outline" size="sm" onClick={handleDashboard}>
+              <LayoutDashboard className="h-4 w-4 mr-1" />
+              Dashboard
+            </Button>
           </div>
         )}
       </div>
@@ -155,9 +181,19 @@ const Toolbar = () => {
         <PreviewMode />
         <PublishControl />
         
-        <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-          <AlertCircle className="h-4 w-4" />
-        </Button>
+        {user ? (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-1" />
+              Sign Out
+            </Button>
+          </div>
+        ) : (
+          <Button variant="outline" size="sm" onClick={handleAuth}>
+            <User className="h-4 w-4 mr-1" />
+            Login
+          </Button>
+        )}
       </div>
     </div>
   );
