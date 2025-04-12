@@ -10,7 +10,7 @@ import {
   PanelRight,
   Text,
   Image,
-  Button as ButtonIcon,
+  ButtonSquare,
   Heading1,
   Minus
 } from "lucide-react";
@@ -19,7 +19,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "panel-right": <PanelRight className="h-4 w-4" />,
   "text": <Text className="h-4 w-4" />,
   "image": <Image className="h-4 w-4" />,
-  "button": <ButtonIcon className="h-4 w-4" />,
+  "button": <ButtonSquare className="h-4 w-4" />,
   "heading-1": <Heading1 className="h-4 w-4" />,
   "minus": <Minus className="h-4 w-4" />,
 };
