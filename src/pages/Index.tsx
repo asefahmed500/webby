@@ -1,13 +1,22 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { BuilderProvider } from "@/context/BuilderContext";
+import ComponentSidebar from "@/components/Builder/ComponentSidebar";
+import PropertyEditor from "@/components/Builder/PropertyEditor";
+import Canvas from "@/components/Builder/Canvas";
+import Toolbar from "@/components/Builder/Toolbar";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <BuilderProvider>
+      <div className="flex flex-col h-screen">
+        <Toolbar />
+        <div className="flex flex-1 overflow-hidden">
+          <ComponentSidebar />
+          <Canvas />
+          <PropertyEditor />
+        </div>
       </div>
-    </div>
+    </BuilderProvider>
   );
 };
 
