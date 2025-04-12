@@ -40,7 +40,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       return;
     }
     
-    if (componentType && component.type === "container") {
+    if (componentType && (component.type === "container" || component.type === "card" || component.type === "navigation" || component.type === "footer")) {
       addComponent(componentType, component.id);
     }
   };
@@ -48,6 +48,9 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   const renderComponentContent = () => {
     switch (component.type) {
       case "container":
+      case "card":
+      case "navigation":
+      case "footer":
         return (
           <div 
             className={cn(
@@ -95,7 +98,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       case "divider":
         return <hr style={component.styles} />;
       default:
-        return <div>Unknown component type</div>;
+        return <div>Unknown component type: {component.type}</div>;
     }
   };
 

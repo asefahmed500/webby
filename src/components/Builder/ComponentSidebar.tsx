@@ -12,16 +12,28 @@ import {
   Image,
   Square,
   Heading1,
-  Minus
+  Minus,
+  Menu,
+  PanelBottom,
+  LayoutDashboard,
+  LayoutList,
+  Megaphone,
+  Wallet
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
   "panel-right": <PanelRight className="h-4 w-4" />,
   "text": <Text className="h-4 w-4" />,
   "image": <Image className="h-4 w-4" />,
-  "button": <Square className="h-4 w-4" />,
+  "square": <Square className="h-4 w-4" />,
   "heading-1": <Heading1 className="h-4 w-4" />,
   "minus": <Minus className="h-4 w-4" />,
+  "menu": <Menu className="h-4 w-4" />,
+  "panel-bottom": <PanelBottom className="h-4 w-4" />,
+  "layout-dashboard": <LayoutDashboard className="h-4 w-4" />,
+  "layout-list": <LayoutList className="h-4 w-4" />,
+  "megaphone": <Megaphone className="h-4 w-4" />,
+  "wallet": <Wallet className="h-4 w-4" />
 };
 
 const ComponentSidebar = () => {

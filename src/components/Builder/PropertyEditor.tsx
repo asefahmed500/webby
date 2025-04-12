@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const PropertyEditor = () => {
   const { selectedComponent, updateComponent, removeComponent } = useBuilder();
@@ -55,11 +56,20 @@ const PropertyEditor = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="content">Text</Label>
-              <Input
-                id="content"
-                value={content}
-                onChange={handleContentChange}
-              />
+              {selectedComponent.content && selectedComponent.content.includes('\n') ? (
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={handleContentChange}
+                  className="min-h-[100px]"
+                />
+              ) : (
+                <Input
+                  id="content"
+                  value={content}
+                  onChange={handleContentChange}
+                />
+              )}
             </div>
           </div>
         );
@@ -78,20 +88,73 @@ const PropertyEditor = () => {
           </div>
         );
       default:
+        if (selectedComponent.type === "container" || selectedComponent.type === "card" || 
+            selectedComponent.type === "navigation" || selectedComponent.type === "footer") {
+          return (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">
+                This is a container element. Add components to it by dragging them here.
+              </p>
+              <p className="text-xs text-blue-600">
+                {selectedComponent.children.length} child components
+              </p>
+            </div>
+          );
+        }
         return null;
     }
   };
 
-  const commonStyles = [
-    { label: "Width", property: "width" },
-    { label: "Height", property: "height" },
-    { label: "Padding", property: "padding" },
-    { label: "Margin", property: "margin" },
-    { label: "Background Color", property: "backgroundColor" },
-    { label: "Text Color", property: "color" },
-    { label: "Border", property: "border" },
-    { label: "Border Radius", property: "borderRadius" },
-  ];
+  // Define style properties based on component type
+  const getStyleFields = () => {
+    const commonStyles = [
+      { label: "Width", property: "width" },
+      { label: "Height", property: "height" },
+      { label: "Padding", property: "padding" },
+      { label: "Margin", property: "margin" },
+      { label: "Background Color", property: "backgroundColor" },
+    ];
+    
+    const textStyles = [
+      { label: "Text Color", property: "color" },
+      { label: "Font Size", property: "fontSize" },
+      { label: "Font Weight", property: "fontWeight" },
+      { label: "Text Align", property: "textAlign" },
+      { label: "Line Height", property: "lineHeight" },
+    ];
+    
+    const borderStyles = [
+      { label: "Border", property: "border" },
+      { label: "Border Radius", property: "borderRadius" },
+      { label: "Box Shadow", property: "boxShadow" },
+    ];
+    
+    const layoutStyles = [
+      { label: "Display", property: "display" },
+      { label: "Flex Direction", property: "flexDirection" },
+      { label: "Justify Content", property: "justifyContent" },
+      { label: "Align Items", property: "alignItems" },
+      { label: "Gap", property: "gap" },
+    ];
+    
+    // Return different style fields based on component type
+    switch (selectedComponent.type) {
+      case "text":
+      case "heading":
+        return [...textStyles, ...commonStyles];
+      case "button":
+        return [...textStyles, ...borderStyles, ...commonStyles];
+      case "container":
+      case "navigation":
+      case "footer":
+      case "card":
+        return [...layoutStyles, ...borderStyles, ...commonStyles];
+      case "image":
+        return [...borderStyles, ...commonStyles];
+      default:
+        return commonStyles;
+    }
+  };
 
   return (
     <div className="w-64 border-l border-gray-200 bg-white h-full overflow-auto">
@@ -103,6 +166,10 @@ const PropertyEditor = () => {
         >
           <Trash2 size={16} />
         </button>
+      </div>
+
+      <div className="p-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-700">
+        Component Type: {selectedComponent.type}
       </div>
 
       <Tabs defaultValue="content" className="w-full">
@@ -118,7 +185,7 @@ const PropertyEditor = () => {
         </TabsContent>
 
         <TabsContent value="style" className="p-4 space-y-4">
-          {commonStyles.map((style) => (
+          {getStyleFields().map((style) => (
             <div key={style.property}>
               <Label htmlFor={style.property}>{style.label}</Label>
               <Input
