@@ -5,15 +5,17 @@ A full-featured website builder platform where users can create and publish webs
 
 ## Features
 
-- Create websites from built-in templates:
-  - Education Website
-  - Portfolio Website
-  - E-commerce Website
-  - Appointment Booking Website
-- Edit and customize all content, design, and structure
+- Choose from built-in website templates:
+  - Education Website (Home, About Us, Courses, Admissions, Faculty, Contact)
+  - Portfolio Website (Home, Projects, About, Resume, Blog, Contact)
+  - E-commerce Website (Home, Shop, Products, Categories, Cart, Checkout, FAQ, About, Contact)
+  - Appointment Booking Website (Home, Services, Book Now, Our Team, Testimonials, About, Contact)
+- Edit and customize all content, design, and structure with an intuitive interface
+- Manage multiple pages per website with easy navigation
+- Preview websites in real-time with responsive design checks
 - Publish websites directly from the platform
 - User authentication with Supabase
-- Database and storage with Supabase
+- Database and storage with Supabase for saving websites, user data, and assets
 
 ## Getting Started
 
@@ -38,13 +40,16 @@ bun install
 ```
 
 3. Set up environment variables:
-Copy the `.env.local` file to the root directory of your project. It should include:
-```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://tlqilvhbjxrtocvsidpt.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+Copy the `.env.local.example` file to create a `.env.local` file in the root directory:
 
-# Application Settings
+```bash
+cp .env.local.example .env.local
+```
+
+Update the values in `.env.local` with your Supabase project information:
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_APP_NAME=Website Builder
 VITE_APP_URL=http://localhost:5173
 ```
@@ -61,8 +66,8 @@ bun dev
 ## Supabase Setup
 
 1. Create a Supabase project at [https://supabase.com/](https://supabase.com/)
-2. Once your project is created, go to the project settings to find your project URL and anon key.
-3. Update your `.env.local` file with your Supabase project URL and anon key.
+2. Once your project is created, go to the project settings to find your project URL and anon key
+3. Update your `.env.local` file with your Supabase project URL and anon key
 4. In the Supabase dashboard, go to Authentication > Settings:
    - Set your site URL to http://localhost:5173 (for development)
    - Add http://localhost:5173/* to the redirect URLs

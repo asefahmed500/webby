@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
 import { useAuth } from '@/context/AuthContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
@@ -67,7 +68,6 @@ const Preview = () => {
   const handleNavigate = (pageId: string) => {
     if (isTemplate) {
       // Stay on the same template but show different page
-      const templateId = defaultTemplates.find(t => t.pages.some(p => p.id === currentPage?.id))?.id;
       const page = pages.find(p => p.id === pageId);
       if (page) {
         setCurrentPage(page);
@@ -125,7 +125,7 @@ const Preview = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navigation */}
-      <header className="bg-white border-b shadow-sm">
+      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -138,14 +138,14 @@ const Preview = () => {
               </h1>
             </div>
             
-            <nav>
+            <nav className="hidden md:block">
               <ul className="flex space-x-6">
-                {pages.map(page => (
+                {pages.map((page) => (
                   <li key={page.id}>
                     <button
                       onClick={() => handleNavigate(page.id)}
                       className={`px-1 py-2 text-sm ${
-                        currentPage.id === page.id 
+                        currentPage?.id === page.id 
                           ? 'text-blue-600 border-b-2 border-blue-600' 
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
@@ -156,6 +156,21 @@ const Preview = () => {
                 ))}
               </ul>
             </nav>
+            
+            {/* Mobile page selector */}
+            <div className="block md:hidden">
+              <select 
+                className="border rounded px-2 py-1 text-sm"
+                value={currentPage?.id || ''}
+                onChange={(e) => handleNavigate(e.target.value)}
+              >
+                {pages.map((page) => (
+                  <option key={page.id} value={page.id}>
+                    {page.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <Button onClick={handleEdit}>
               {isTemplate ? 'Use This Template' : (
@@ -172,7 +187,7 @@ const Preview = () => {
       {/* Page Content */}
       <main className="flex-1 bg-white">
         <div className="container mx-auto px-4 py-8">
-          {currentPage.components && currentPage.components.length > 0 ? (
+          {currentPage?.components && currentPage.components.length > 0 ? (
             currentPage.components.map((component) => (
               <DraggableComponent key={component.id} component={component} />
             ))

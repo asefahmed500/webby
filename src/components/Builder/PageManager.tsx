@@ -9,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { FilePlus, FileX, File } from "lucide-react";
+import { FilePlus, FileX, File, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 const PageManager = () => {
@@ -86,13 +87,15 @@ const PageManager = () => {
                   onKeyDown={(e) => e.key === 'Enter' && handleAddPage()}
                 />
               </div>
-              <Button onClick={handleAddPage}>Create Page</Button>
+              <DialogFooter>
+                <Button onClick={handleAddPage}>Create Page</Button>
+              </DialogFooter>
             </div>
           </DialogContent>
         </Dialog>
       </div>
       
-      <div className="space-y-1 px-2">
+      <div className="space-y-1 px-2 max-h-[500px] overflow-y-auto">
         {pages.map((page) => (
           <div 
             key={page.id}
@@ -108,19 +111,21 @@ const PageManager = () => {
               )}
             </div>
             
-            {!page.isHome && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeletePage(page.id);
-                }}
-              >
-                <FileX className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex space-x-1">
+              {!page.isHome && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePage(page.id);
+                  }}
+                >
+                  <FileX className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>

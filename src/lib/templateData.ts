@@ -11,6 +11,13 @@ const educationPages: Page[] = [
     isHome: true
   },
   {
+    id: "about",
+    name: "About Us",
+    path: "/about",
+    components: [],
+    isHome: false
+  },
+  {
     id: "courses",
     name: "Courses",
     path: "/courses",
@@ -18,16 +25,16 @@ const educationPages: Page[] = [
     isHome: false
   },
   {
-    id: "about",
-    name: "About",
-    path: "/about",
+    id: "admissions",
+    name: "Admissions",
+    path: "/admissions",
     components: [],
     isHome: false
   },
   {
-    id: "teachers",
-    name: "Teachers",
-    path: "/teachers",
+    id: "faculty",
+    name: "Faculty",
+    path: "/faculty",
     components: [],
     isHome: false
   },
@@ -64,9 +71,16 @@ const portfolioPages: Page[] = [
     isHome: false
   },
   {
-    id: "skills",
-    name: "Skills",
-    path: "/skills",
+    id: "resume",
+    name: "Resume",
+    path: "/resume",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "blog",
+    name: "Blog",
+    path: "/blog",
     components: [],
     isHome: false
   },
@@ -87,6 +101,13 @@ const ecommercePages: Page[] = [
     path: "/",
     components: [],
     isHome: true
+  },
+  {
+    id: "shop",
+    name: "Shop",
+    path: "/shop",
+    components: [],
+    isHome: false
   },
   {
     id: "products",
@@ -113,6 +134,13 @@ const ecommercePages: Page[] = [
     id: "checkout",
     name: "Checkout",
     path: "/checkout",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "faq",
+    name: "FAQ",
+    path: "/faq",
     components: [],
     isHome: false
   },
@@ -156,9 +184,16 @@ const bookingPages: Page[] = [
     isHome: false
   },
   {
-    id: "team",
+    id: "professionals",
     name: "Our Team",
-    path: "/team",
+    path: "/professionals",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "testimonials",
+    name: "Testimonials",
+    path: "/testimonials",
     components: [],
     isHome: false
   },
