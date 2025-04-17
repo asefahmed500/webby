@@ -15,7 +15,14 @@ import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Templates from "./pages/Templates";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

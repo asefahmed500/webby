@@ -8,9 +8,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Page } from "@/lib/pageData";
 import { toast } from "sonner";
-import { Layout, Plus, Globe, FileEdit, Trash2, LogOut, User } from "lucide-react";
+import { 
+  Layout, 
+  Plus, 
+  Globe, 
+  FileEdit, 
+  Trash2, 
+  BookOpen,
+  Briefcase,
+  ShoppingBag,
+  Calendar
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useRequireAuth } from "@/hooks/useRedirectAuth";
+import { defaultTemplates } from "@/lib/templateData";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -62,6 +73,10 @@ export default function Dashboard() {
 
   const handlePreviewWebsite = () => {
     navigate("/preview");
+  };
+
+  const handleUseTemplate = (templateId: string) => {
+    navigate(`/templates`);
   };
 
   return (
@@ -152,42 +167,31 @@ export default function Dashboard() {
               <h2 className="text-lg font-medium">Website Templates</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card>
-                <div className="h-40 bg-gray-100 flex items-center justify-center">
-                  <Layout className="h-12 w-12 text-gray-400" />
-                </div>
-                <CardHeader>
-                  <CardTitle>Business Website</CardTitle>
-                  <CardDescription>Professional template for small businesses</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button onClick={() => navigate("/")}>Use Template</Button>
-                </CardFooter>
-              </Card>
-              <Card>
-                <div className="h-40 bg-gray-100 flex items-center justify-center">
-                  <Layout className="h-12 w-12 text-gray-400" />
-                </div>
-                <CardHeader>
-                  <CardTitle>Portfolio</CardTitle>
-                  <CardDescription>Showcase your work with this template</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button onClick={() => navigate("/")}>Use Template</Button>
-                </CardFooter>
-              </Card>
-              <Card>
-                <div className="h-40 bg-gray-100 flex items-center justify-center">
-                  <Layout className="h-12 w-12 text-gray-400" />
-                </div>
-                <CardHeader>
-                  <CardTitle>E-commerce Store</CardTitle>
-                  <CardDescription>Start selling products online</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button onClick={() => navigate("/")}>Use Template</Button>
-                </CardFooter>
-              </Card>
+              {defaultTemplates.map((template) => (
+                <Card key={template.id} className="overflow-hidden">
+                  <div className="h-40 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                    {template.id === 'education' && <BookOpen className="h-16 w-16 text-blue-500" />}
+                    {template.id === 'portfolio' && <Briefcase className="h-16 w-16 text-indigo-500" />}
+                    {template.id === 'ecommerce' && <ShoppingBag className="h-16 w-16 text-purple-500" />}
+                    {template.id === 'booking' && <Calendar className="h-16 w-16 text-green-500" />}
+                    {!['education', 'portfolio', 'ecommerce', 'booking'].includes(template.id) && 
+                      <Layout className="h-16 w-16 text-gray-400" />}
+                  </div>
+                  <CardHeader>
+                    <CardTitle>{template.name}</CardTitle>
+                    <CardDescription>{template.description}</CardDescription>
+                  </CardHeader>
+                  <CardFooter className="flex justify-between">
+                    <Button onClick={() => handleUseTemplate(template.id)}>Use Template</Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate(`/preview/${template.id}`)}
+                    >
+                      Preview
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
           </TabsContent>
         </Tabs>

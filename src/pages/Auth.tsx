@@ -41,7 +41,15 @@ export default function Auth() {
         });
 
         if (error) throw error;
-        toast.success("Signup successful! Please check your email for verification.");
+        
+        if (data.session) {
+          // User is immediately signed in (email confirmation is disabled)
+          toast.success("Account created successfully!");
+          navigate("/dashboard");
+        } else {
+          // Email confirmation is enabled
+          toast.success("Signup successful! Please check your email for verification.");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred during authentication");
