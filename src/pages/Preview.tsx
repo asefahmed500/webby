@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
@@ -6,17 +5,29 @@ import { useAuth } from '@/context/AuthContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Home } from 'lucide-react';
+import { defaultTemplates } from '@/lib/templateData';
 
 const Preview = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTemplate, setIsTemplate] = useState(false);
   const { pageId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   
   useEffect(() => {
-    // Load pages from localStorage
+    // Check if we're previewing a template
+    const template = defaultTemplates.find(t => t.id === pageId);
+    if (template) {
+      setPages(template.pages);
+      setCurrentPage(template.pages.find(p => p.isHome) || template.pages[0]);
+      setIsTemplate(true);
+      setIsLoading(false);
+      return;
+    }
+    
+    // Otherwise, load from localStorage
     try {
       setIsLoading(true);
       const savedData = localStorage.getItem("saved-website");
@@ -54,11 +65,25 @@ const Preview = () => {
   }, [pageId, navigate]);
   
   const handleNavigate = (pageId: string) => {
-    navigate(`/preview/${pageId === 'home' ? '' : pageId}`);
+    if (isTemplate) {
+      // Stay on the same template but show different page
+      const templateId = defaultTemplates.find(t => t.pages.some(p => p.id === currentPage?.id))?.id;
+      const page = pages.find(p => p.id === pageId);
+      if (page) {
+        setCurrentPage(page);
+      }
+    } else {
+      navigate(`/preview/${pageId === 'home' ? '' : pageId}`);
+    }
   };
 
   const handleEdit = () => {
-    navigate('/');
+    if (isTemplate) {
+      // If viewing a template, go to template selection
+      navigate('/templates');
+    } else {
+      navigate('/');
+    }
   };
 
   const handleDashboard = () => {
@@ -104,11 +129,13 @@ const Preview = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => user ? handleDashboard() : handleEdit()}>
+              <Button variant="ghost" onClick={() => isTemplate ? navigate('/templates') : (user ? handleDashboard() : handleEdit())}>
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                {user ? 'Back to Dashboard' : 'Back to Editor'}
+                {isTemplate ? 'Back to Templates' : (user ? 'Back to Dashboard' : 'Back to Editor')}
               </Button>
-              <h1 className="font-medium">Preview Mode</h1>
+              <h1 className="font-medium">
+                {isTemplate ? 'Template Preview' : 'Preview Mode'}
+              </h1>
             </div>
             
             <nav>
@@ -131,8 +158,12 @@ const Preview = () => {
             </nav>
 
             <Button onClick={handleEdit}>
-              <Edit className="h-4 w-4 mr-1" />
-              Edit Website
+              {isTemplate ? 'Use This Template' : (
+                <>
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit Website
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -147,10 +178,18 @@ const Preview = () => {
             ))
           ) : (
             <div className="text-center py-16">
-              <p className="text-gray-500">This page has no content yet.</p>
+              <p className="text-gray-500">
+                {isTemplate 
+                  ? "This is a template page. You can customize it after selecting this template."
+                  : "This page has no content yet."}
+              </p>
               <Button variant="outline" className="mt-4" onClick={handleEdit}>
-                <Edit className="h-4 w-4 mr-1" />
-                Add Content
+                {isTemplate ? 'Use This Template' : (
+                  <>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Add Content
+                  </>
+                )}
               </Button>
             </div>
           )}

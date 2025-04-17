@@ -45,7 +45,7 @@ export default function Dashboard() {
   }, [user]);
 
   const handleNewWebsite = () => {
-    navigate("/");
+    navigate("/templates");
   };
 
   const handleEditWebsite = () => {
