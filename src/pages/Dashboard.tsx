@@ -9,18 +9,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Page } from "@/lib/pageData";
 import { toast } from "sonner";
 import { Layout, Plus, Globe, FileEdit, Trash2, LogOut, User } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import { useRequireAuth } from "@/hooks/useRedirectAuth";
 
 export default function Dashboard() {
-  const { user, isLoading, signOut } = useAuth();
+  const { user } = useAuth();
   const [websites, setWebsites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, isLoading, navigate]);
+  
+  // Require authentication for this page
+  useRequireAuth();
 
   useEffect(() => {
     if (user) {
@@ -32,10 +31,10 @@ export default function Dashboard() {
           const data = JSON.parse(savedData);
           setWebsites([{
             id: "1",
-            name: "My Website",
+            name: data.websiteName || "My Website",
             created_at: new Date().toISOString(),
             pages: data.pages?.length || 0,
-            status: "published"
+            status: data.publishStatus || "draft"
           }]);
         }
       } catch (error) {
@@ -65,43 +64,16 @@ export default function Dashboard() {
     navigate("/preview");
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-  };
-
-  const handleProfile = () => {
-    navigate("/profile");
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Dashboard navbar */}
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Website Builder Dashboard</h1>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={handleProfile}>
-              <User className="h-4 w-4 mr-1" />
-              Profile
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-1" />
-              Sign Out
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      
+      <main className="container mx-auto px-4 py-8 flex-1">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Website Dashboard</h1>
+          <p className="text-gray-600">Manage your websites and templates</p>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+        
         <Tabs defaultValue="websites" className="w-full">
           <TabsList>
             <TabsTrigger value="websites">My Websites</TabsTrigger>
@@ -135,8 +107,12 @@ export default function Dashboard() {
                     <CardContent className="pb-2">
                       <div className="flex items-center justify-between text-sm text-gray-500">
                         <span>{website.pages} pages</span>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                          {website.status}
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          website.status === "published" 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-amber-100 text-amber-800"
+                        }`}>
+                          {website.status === "published" ? "Published" : "Draft"}
                         </span>
                       </div>
                     </CardContent>
@@ -156,7 +132,7 @@ export default function Dashboard() {
                   </Card>
                 ))
               ) : (
-                <div className="col-span-3 text-center py-12">
+                <div className="col-span-full text-center py-12">
                   <div className="mb-4">
                     <Layout className="h-12 w-12 mx-auto text-gray-400" />
                   </div>
@@ -176,7 +152,6 @@ export default function Dashboard() {
               <h2 className="text-lg font-medium">Website Templates</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Template cards would go here */}
               <Card>
                 <div className="h-40 bg-gray-100 flex items-center justify-center">
                   <Layout className="h-12 w-12 text-gray-400" />

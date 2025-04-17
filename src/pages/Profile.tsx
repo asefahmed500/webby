@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Globe } from "lucide-react";
 import { toast } from "sonner";
+import Navbar from "@/components/Navbar";
+import { useRequireAuth } from "@/hooks/useRedirectAuth";
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
@@ -15,12 +17,9 @@ export default function Profile() {
   const [websites, setWebsites] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, isLoading, navigate]);
+  
+  // Require authentication for this page
+  useRequireAuth();
 
   useEffect(() => {
     if (user) {
@@ -35,7 +34,7 @@ export default function Profile() {
           const data = JSON.parse(savedData);
           setWebsites([{
             id: "1",
-            name: "My Website",
+            name: data.websiteName || "My Website",
             created_at: new Date().toISOString(),
             url: "/preview"
           }]);
@@ -66,19 +65,18 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Profile navbar */}
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="mr-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      
+      <main className="container mx-auto px-4 py-8 flex-1">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Dashboard
           </Button>
-          <h1 className="text-xl font-bold">Your Profile</h1>
+          <h1 className="text-2xl font-bold">Your Profile</h1>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Profile form */}
           <div className="md:col-span-2">

@@ -14,10 +14,7 @@ import {
   Monitor, 
   Trash, 
   Download,
-  AlertCircle,
   FileText,
-  User,
-  LogOut,
   LayoutDashboard
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,13 +26,19 @@ import {
 import PageManager from "./PageManager";
 
 const Toolbar = () => {
-  const { components, setComponents, previewMode, pages, currentPageId } = useBuilder();
+  const { components, setComponents, previewMode, pages, currentPageId, websiteName } = useBuilder();
   const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect to auth if not logged in
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
   const handleSave = () => {
-    const data = JSON.stringify({ pages });
+    const data = JSON.stringify({ pages, websiteName });
     localStorage.setItem("saved-website", data);
     toast.success("Website saved successfully!");
   };
@@ -83,16 +86,6 @@ const Toolbar = () => {
 
   const handleDashboard = () => {
     navigate("/dashboard");
-  };
-
-  const handleAuth = () => {
-    navigate("/auth");
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-    toast.success("Signed out successfully");
   };
 
   const currentPage = pages.find(page => page.id === currentPageId);
@@ -180,20 +173,6 @@ const Toolbar = () => {
         
         <PreviewMode />
         <PublishControl />
-        
-        {user ? (
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-1" />
-              Sign Out
-            </Button>
-          </div>
-        ) : (
-          <Button variant="outline" size="sm" onClick={handleAuth}>
-            <User className="h-4 w-4 mr-1" />
-            Login
-          </Button>
-        )}
       </div>
     </div>
   );
