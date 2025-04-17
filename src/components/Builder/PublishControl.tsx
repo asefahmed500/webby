@@ -11,12 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Globe, Check } from "lucide-react";
 
 const PublishControl = () => {
   const { user } = useAuth();
-  const { publishStatus, setPublishStatus, pages } = useBuilder();
+  const { publishStatus, setPublishStatus, pages, websiteName } = useBuilder();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -33,7 +34,9 @@ const PublishControl = () => {
     const websiteData = {
       pages,
       publishedAt: new Date().toISOString(),
-      userId: user.id
+      userId: user.id,
+      publishStatus: "published",
+      websiteName: websiteName || "My Website"
     };
     
     // Simulate publishing process
@@ -50,7 +53,7 @@ const PublishControl = () => {
           onClick: () => window.open("/preview", "_blank"),
         },
       });
-    }, 2000);
+    }, 1000);
   };
   
   return (
@@ -77,6 +80,9 @@ const PublishControl = () => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Publish Website</DialogTitle>
+          <DialogDescription>
+            This will make your website publicly accessible via the preview URL.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
@@ -97,6 +103,7 @@ const PublishControl = () => {
             
             <div className="border rounded-md p-3 bg-gray-50">
               <h4 className="font-medium mb-2">Website details:</h4>
+              <p className="text-sm">Name: {websiteName || "My Website"}</p>
               <p className="text-sm">Pages: {pages.length}</p>
               <p className="text-sm">Status: {publishStatus === "published" ? "Live" : "Draft"}</p>
             </div>

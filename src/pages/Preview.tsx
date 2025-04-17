@@ -10,6 +10,7 @@ import { ArrowLeft, Edit, Home } from 'lucide-react';
 const Preview = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { pageId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -17,10 +18,12 @@ const Preview = () => {
   useEffect(() => {
     // Load pages from localStorage
     try {
+      setIsLoading(true);
       const savedData = localStorage.getItem("saved-website");
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        if (parsedData.pages) {
+        
+        if (parsedData.pages && Array.isArray(parsedData.pages)) {
           setPages(parsedData.pages);
           
           // Set current page based on URL parameter or default to home
@@ -37,10 +40,16 @@ const Preview = () => {
               navigate('/preview');
             }
           }
+        } else {
+          console.error("Invalid website data format:", parsedData);
         }
+      } else {
+        console.error("No saved website found in localStorage");
       }
+      setIsLoading(false);
     } catch (error) {
       console.error("Error loading website:", error);
+      setIsLoading(false);
     }
   }, [pageId, navigate]);
   
@@ -56,7 +65,18 @@ const Preview = () => {
     navigate('/dashboard');
   };
   
-  if (!currentPage) {
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading website...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!currentPage || pages.length === 0) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Website not found</h1>
@@ -121,7 +141,7 @@ const Preview = () => {
       {/* Page Content */}
       <main className="flex-1 bg-white">
         <div className="container mx-auto px-4 py-8">
-          {currentPage.components.length > 0 ? (
+          {currentPage.components && currentPage.components.length > 0 ? (
             currentPage.components.map((component) => (
               <DraggableComponent key={component.id} component={component} />
             ))
