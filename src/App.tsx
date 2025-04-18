@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { BuilderProvider } from "@/context/BuilderContext";
 import Index from "./pages/Index";
 import Preview from "./pages/Preview";
 import NotFound from "./pages/NotFound";
@@ -33,8 +34,16 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/preview" element={<Preview />} />
-            <Route path="/preview/:pageId" element={<Preview />} />
+            <Route path="/preview" element={
+              <BuilderProvider>
+                <Preview />
+              </BuilderProvider>
+            } />
+            <Route path="/preview/:pageId" element={
+              <BuilderProvider>
+                <Preview />
+              </BuilderProvider>
+            } />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
