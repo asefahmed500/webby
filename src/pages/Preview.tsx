@@ -1,15 +1,14 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
 import { useAuth } from '@/context/AuthContext';
-import { BuilderProvider } from '@/context/BuilderContext';
+import { useBuilder } from '@/context/BuilderContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Home } from 'lucide-react';
 import { defaultTemplates } from '@/lib/templateData';
 
-const PreviewContent = () => {
+const Preview = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -215,14 +214,4 @@ const PreviewContent = () => {
   );
 };
 
-// Main component that wraps the content with BuilderProvider
-const Preview = () => {
-  return (
-    <BuilderProvider>
-      <PreviewContent />
-    </BuilderProvider>
-  );
-};
-
 export default Preview;
-

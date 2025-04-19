@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { BuilderProvider } from "@/context/BuilderContext";
+import { useBuilder } from "@/context/BuilderContext";
 import { useAuth } from "@/context/AuthContext";
 import ComponentSidebar from "@/components/Builder/ComponentSidebar";
 import PropertyEditor from "@/components/Builder/PropertyEditor";
@@ -40,9 +40,7 @@ const Index = () => {
   // If user is logged in, show the builder directly
   // Otherwise, show the landing page
   return user ? (
-    <BuilderProvider>
-      <BuilderInterface />
-    </BuilderProvider>
+    <BuilderInterface />
   ) : (
     <LandingPage onStartBuilding={() => navigate("/auth")} />
   );
