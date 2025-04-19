@@ -44,7 +44,8 @@ export const authService = {
 export const databaseService = {
   // Create a new website
   createWebsite: async (websiteData: any) => {
-    const { data, error } = await (supabase.from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .insert([websiteData])
       .select();
     return { data, error };
@@ -52,7 +53,8 @@ export const databaseService = {
   
   // Get user websites
   getUserWebsites: async (userId: string) => {
-    const { data, error } = await (supabase.from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .select('*')
       .eq('user_id', userId);
     return { data, error };
@@ -60,7 +62,8 @@ export const databaseService = {
   
   // Get website by ID
   getWebsiteById: async (id: string) => {
-    const { data, error } = await (supabase.from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .select('*')
       .eq('id', id)
       .single();
@@ -69,7 +72,8 @@ export const databaseService = {
   
   // Update website
   updateWebsite: async (id: string, websiteData: any) => {
-    const { data, error } = await (supabase.from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .update(websiteData)
       .eq('id', id)
       .select();
@@ -78,7 +82,8 @@ export const databaseService = {
   
   // Delete website
   deleteWebsite: async (id: string) => {
-    const { error } = await (supabase.from('websites') as any)
+    const { error } = await supabase
+      .from('websites' as any)
       .delete()
       .eq('id', id);
     return { error };
@@ -87,21 +92,24 @@ export const databaseService = {
   // Pages operations
   pages: {
     create: async (pageData: any) => {
-      const { data, error } = await (supabase.from('pages') as any)
+      const { data, error } = await supabase
+        .from('pages' as any)
         .insert([pageData])
         .select();
       return { data, error };
     },
     
     getByWebsite: async (websiteId: string) => {
-      const { data, error } = await (supabase.from('pages') as any)
+      const { data, error } = await supabase
+        .from('pages' as any)
         .select('*')
         .eq('website_id', websiteId);
       return { data, error };
     },
     
     update: async (id: string, pageData: any) => {
-      const { data, error } = await (supabase.from('pages') as any)
+      const { data, error } = await supabase
+        .from('pages' as any)
         .update(pageData)
         .eq('id', id)
         .select();
@@ -109,7 +117,8 @@ export const databaseService = {
     },
     
     delete: async (id: string) => {
-      const { error } = await (supabase.from('pages') as any)
+      const { error } = await supabase
+        .from('pages' as any)
         .delete()
         .eq('id', id);
       return { error };

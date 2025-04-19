@@ -1,4 +1,3 @@
-
 /**
  * Supabase Setup Guide for Website Builder Platform
  * 
@@ -225,9 +224,8 @@ export const authExamples = {
 export const databaseExamples = {
   // Create a new website
   createWebsite: async (websiteData: any) => {
-    // Using type assertion with 'any' to bypass type checking
-    const { data, error } = await (supabase
-      .from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .insert([websiteData])
       .select();
     return { data, error };
@@ -235,9 +233,8 @@ export const databaseExamples = {
   
   // Get user websites
   getUserWebsites: async (userId: string) => {
-    // Using type assertion with 'any' to bypass type checking
-    const { data, error } = await (supabase
-      .from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .select('*')
       .eq('user_id', userId);
     return { data, error };
@@ -245,9 +242,8 @@ export const databaseExamples = {
   
   // Update website
   updateWebsite: async (id: string, websiteData: any) => {
-    // Using type assertion with 'any' to bypass type checking
-    const { data, error } = await (supabase
-      .from('websites') as any)
+    const { data, error } = await supabase
+      .from('websites' as any)
       .update(websiteData)
       .eq('id', id)
       .select();
@@ -256,9 +252,8 @@ export const databaseExamples = {
   
   // Delete website
   deleteWebsite: async (id: string) => {
-    // Using type assertion with 'any' to bypass type checking
-    const { error } = await (supabase
-      .from('websites') as any)
+    const { error } = await supabase
+      .from('websites' as any)
       .delete()
       .eq('id', id);
     return { error };
