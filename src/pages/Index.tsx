@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BuilderProvider } from "@/context/BuilderContext";
@@ -10,6 +9,19 @@ import Toolbar from "@/components/Builder/Toolbar";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Globe, Database, Palette, Layers, FileText } from "lucide-react";
+
+const BuilderInterface = () => {
+  return (
+    <div className="flex flex-col h-screen">
+      <Toolbar />
+      <div className="flex flex-1 overflow-hidden">
+        <ComponentSidebar />
+        <Canvas />
+        <PropertyEditor />
+      </div>
+    </div>
+  );
+};
 
 const Index = () => {
   const { user } = useAuth();
@@ -29,14 +41,7 @@ const Index = () => {
   // Otherwise, show the landing page
   return user ? (
     <BuilderProvider>
-      <div className="flex flex-col h-screen">
-        <Toolbar />
-        <div className="flex flex-1 overflow-hidden">
-          <ComponentSidebar />
-          <Canvas />
-          <PropertyEditor />
-        </div>
-      </div>
+      <BuilderInterface />
     </BuilderProvider>
   ) : (
     <LandingPage onStartBuilding={() => navigate("/auth")} />

@@ -34,16 +34,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/preview" element={
-              <BuilderProvider>
-                <Preview />
-              </BuilderProvider>
-            } />
-            <Route path="/preview/:pageId" element={
-              <BuilderProvider>
-                <Preview />
-              </BuilderProvider>
-            } />
+            <Route path="/preview" element={<Preview />} />
+            <Route path="/preview/:pageId" element={<Preview />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
@@ -59,3 +51,4 @@ const App = () => (
 );
 
 export default App;
+

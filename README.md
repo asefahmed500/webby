@@ -72,6 +72,13 @@ bun dev
    - Set your site URL to http://localhost:5173 (for development)
    - Add http://localhost:5173/* to the redirect URLs
    - Disable email confirmations for easier testing (optional)
+5. Create the following tables in your Supabase database:
+   - `websites`: To store user websites
+   - `pages`: To store pages for each website
+   - `assets`: To store uploaded assets
+6. Set up storage buckets for user assets:
+   - Create a bucket named "assets" for website assets
+   - Set appropriate CORS and security policies
 
 ## Production Deployment
 
@@ -88,3 +95,4 @@ For production:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+

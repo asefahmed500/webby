@@ -78,9 +78,9 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
   // Load website data from local storage on startup
   useEffect(() => {
-    const savedData = localStorage.getItem("saved-website");
-    if (savedData) {
-      try {
+    try {
+      const savedData = localStorage.getItem("saved-website");
+      if (savedData) {
         const parsedData = JSON.parse(savedData);
         if (parsedData.pages) {
           setPages(parsedData.pages);
@@ -93,10 +93,17 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
           if (parsedData.websiteName) {
             setWebsiteName(parsedData.websiteName);
           }
+          
+          // Load components of the current page
+          const homePage = parsedData.pages.find((p: Page) => p.isHome);
+          if (homePage) {
+            setCurrentPageId(homePage.id);
+            setComponents(homePage.components || []);
+          }
         }
-      } catch (error) {
-        console.error("Error loading saved website:", error);
       }
+    } catch (error) {
+      console.error("Error loading saved website:", error);
     }
   }, []);
 
@@ -104,8 +111,13 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   // In a real app, you'd save to Supabase instead
   const saveWebsite = async () => {
     try {
+      // Update the current page's components
+      const updatedPages = pages.map(page => 
+        page.id === currentPageId ? { ...page, components } : page
+      );
+      
       const websiteData = {
-        pages,
+        pages: updatedPages,
         publishStatus,
         websiteId: websiteId || `website-${Math.random().toString(36).substr(2, 9)}`,
         websiteName,
@@ -118,6 +130,8 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       if (!websiteId) {
         setWebsiteId(websiteData.websiteId);
       }
+      
+      setPages(updatedPages);
       
       // In a real app with Supabase, you'd save to the database here
       
@@ -139,15 +153,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
     if (!targetId) {
       setComponents(prev => [...prev, newComponent]);
-      
-      // Also update the component in the current page
-      setPages(prev => prev.map(page => 
-        page.id === currentPageId ? {
-          ...page,
-          components: [...page.components, newComponent]
-        } : page
-      ));
-      
       return;
     }
 
@@ -163,14 +168,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     });
     
     setComponents(updatedComponents);
-    
-    // Also update the component in the current page
-    setPages(prev => prev.map(page => 
-      page.id === currentPageId ? {
-        ...page,
-        components: updatedComponents
-      } : page
-    ));
   };
 
   const updateComponent = (id: string, updates: Partial<Component>) => {
@@ -191,14 +188,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
     const updatedComponents = updateComponentRecursive(components);
     setComponents(updatedComponents);
-    
-    // Also update the component in the current page
-    setPages(prev => prev.map(page => 
-      page.id === currentPageId ? {
-        ...page,
-        components: updatedComponents
-      } : page
-    ));
   };
 
   const removeComponent = (id: string) => {
@@ -213,14 +202,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
     const updatedComponents = removeComponentRecursive(components);
     setComponents(updatedComponents);
-    
-    // Also update the component in the current page
-    setPages(prev => prev.map(page => 
-      page.id === currentPageId ? {
-        ...page,
-        components: updatedComponents
-      } : page
-    ));
     
     if (selectedComponent?.id === id) {
       setSelectedComponent(null);
@@ -262,13 +243,22 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   };
   
   // When changing pages, update the components
-  React.useEffect(() => {
+  useEffect(() => {
     const currentPage = pages.find(page => page.id === currentPageId);
     if (currentPage) {
       setComponents(currentPage.components || []);
       setSelectedComponent(null);
     }
-  }, [currentPageId]);
+  }, [currentPageId, pages]);
+  
+  // Save changes when components are updated
+  useEffect(() => {
+    const updatedPages = pages.map(page => 
+      page.id === currentPageId ? { ...page, components } : page
+    );
+    setPages(updatedPages);
+    // Ideally we'd debounce this in a real app
+  }, [components]);
 
   return (
     <BuilderContext.Provider
