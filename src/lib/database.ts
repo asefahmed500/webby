@@ -7,6 +7,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 
 /**
  * Step 1: Create a Supabase Project
@@ -221,12 +222,15 @@ export const authExamples = {
   },
 };
 
+// Type for generic table access - used for type assertions
+type GenericTable = any;
+
 // Database operations examples
 export const databaseExamples = {
   // Create a new website
   createWebsite: async (websiteData: any) => {
-    const { data, error } = await supabase
-      .from('websites')
+    const { data, error } = await (supabase
+      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
       .insert([websiteData])
       .select();
     return { data, error };
@@ -234,8 +238,8 @@ export const databaseExamples = {
   
   // Get user websites
   getUserWebsites: async (userId: string) => {
-    const { data, error } = await supabase
-      .from('websites')
+    const { data, error } = await (supabase
+      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
       .select('*')
       .eq('user_id', userId);
     return { data, error };
@@ -243,8 +247,8 @@ export const databaseExamples = {
   
   // Update website
   updateWebsite: async (id: string, websiteData: any) => {
-    const { data, error } = await supabase
-      .from('websites')
+    const { data, error } = await (supabase
+      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
       .update(websiteData)
       .eq('id', id)
       .select();
@@ -253,8 +257,8 @@ export const databaseExamples = {
   
   // Delete website
   deleteWebsite: async (id: string) => {
-    const { error } = await supabase
-      .from('websites')
+    const { error } = await (supabase
+      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
       .delete()
       .eq('id', id);
     return { error };
