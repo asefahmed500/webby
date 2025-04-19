@@ -1,3 +1,4 @@
+
 /**
  * Supabase Setup Guide for Website Builder Platform
  * 
@@ -226,7 +227,7 @@ export const databaseExamples = {
   createWebsite: async (websiteData: any) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .insert([websiteData])
+      .insert([websiteData] as any)
       .select();
     return { data, error };
   },
@@ -235,7 +236,7 @@ export const databaseExamples = {
   getUserWebsites: async (userId: string) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .select('*')
+      .select('*' as any)
       .eq('user_id', userId);
     return { data, error };
   },
@@ -244,7 +245,7 @@ export const databaseExamples = {
   updateWebsite: async (id: string, websiteData: any) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .update(websiteData)
+      .update(websiteData as any)
       .eq('id', id)
       .select();
     return { data, error };

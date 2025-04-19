@@ -46,7 +46,7 @@ export const databaseService = {
   createWebsite: async (websiteData: any) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .insert([websiteData])
+      .insert([websiteData] as any)
       .select();
     return { data, error };
   },
@@ -55,7 +55,7 @@ export const databaseService = {
   getUserWebsites: async (userId: string) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .select('*')
+      .select('*' as any)
       .eq('user_id', userId);
     return { data, error };
   },
@@ -64,7 +64,7 @@ export const databaseService = {
   getWebsiteById: async (id: string) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .select('*')
+      .select('*' as any)
       .eq('id', id)
       .single();
     return { data, error };
@@ -74,7 +74,7 @@ export const databaseService = {
   updateWebsite: async (id: string, websiteData: any) => {
     const { data, error } = await supabase
       .from('websites' as any)
-      .update(websiteData)
+      .update(websiteData as any)
       .eq('id', id)
       .select();
     return { data, error };
@@ -94,7 +94,7 @@ export const databaseService = {
     create: async (pageData: any) => {
       const { data, error } = await supabase
         .from('pages' as any)
-        .insert([pageData])
+        .insert([pageData] as any)
         .select();
       return { data, error };
     },
@@ -102,7 +102,7 @@ export const databaseService = {
     getByWebsite: async (websiteId: string) => {
       const { data, error } = await supabase
         .from('pages' as any)
-        .select('*')
+        .select('*' as any)
         .eq('website_id', websiteId);
       return { data, error };
     },
@@ -110,7 +110,7 @@ export const databaseService = {
     update: async (id: string, pageData: any) => {
       const { data, error } = await supabase
         .from('pages' as any)
-        .update(pageData)
+        .update(pageData as any)
         .eq('id', id)
         .select();
       return { data, error };
