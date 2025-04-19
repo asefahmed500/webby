@@ -7,7 +7,6 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 
 /**
  * Step 1: Create a Supabase Project
@@ -222,15 +221,13 @@ export const authExamples = {
   },
 };
 
-// Type for generic table access - used for type assertions
-type GenericTable = any;
-
 // Database operations examples
 export const databaseExamples = {
   // Create a new website
   createWebsite: async (websiteData: any) => {
+    // Using type assertion with 'any' to bypass type checking
     const { data, error } = await (supabase
-      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
+      .from('websites') as any)
       .insert([websiteData])
       .select();
     return { data, error };
@@ -238,8 +235,9 @@ export const databaseExamples = {
   
   // Get user websites
   getUserWebsites: async (userId: string) => {
+    // Using type assertion with 'any' to bypass type checking
     const { data, error } = await (supabase
-      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
+      .from('websites') as any)
       .select('*')
       .eq('user_id', userId);
     return { data, error };
@@ -247,8 +245,9 @@ export const databaseExamples = {
   
   // Update website
   updateWebsite: async (id: string, websiteData: any) => {
+    // Using type assertion with 'any' to bypass type checking
     const { data, error } = await (supabase
-      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
+      .from('websites') as any)
       .update(websiteData)
       .eq('id', id)
       .select();
@@ -257,8 +256,9 @@ export const databaseExamples = {
   
   // Delete website
   deleteWebsite: async (id: string) => {
+    // Using type assertion with 'any' to bypass type checking
     const { error } = await (supabase
-      .from('websites') as PostgrestQueryBuilder<any, any, any, any>)
+      .from('websites') as any)
       .delete()
       .eq('id', id);
     return { error };
