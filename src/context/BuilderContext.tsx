@@ -76,6 +76,21 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
   const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
 
+  // Check for published status
+  useEffect(() => {
+    try {
+      const publishedData = localStorage.getItem("published-website");
+      if (publishedData) {
+        const parsedData = JSON.parse(publishedData);
+        if (parsedData.publishStatus === "published") {
+          setPublishStatus("published");
+        }
+      }
+    } catch (error) {
+      console.error("Error checking published status:", error);
+    }
+  }, []);
+
   // Load website data from local storage on startup
   useEffect(() => {
     try {
@@ -93,12 +108,14 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
           if (parsedData.websiteName) {
             setWebsiteName(parsedData.websiteName);
           }
-          
-          // Load components of the current page
-          const homePage = parsedData.pages.find((p: Page) => p.isHome);
-          if (homePage) {
-            setCurrentPageId(homePage.id);
-            setComponents(homePage.components || []);
+          if (parsedData.currentPageId) {
+            setCurrentPageId(parsedData.currentPageId);
+          } else {
+            // Find home page or use first page
+            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+            if (homePage) {
+              setCurrentPageId(homePage.id);
+            }
           }
         }
       }
@@ -108,10 +125,9 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   // Save to local storage whenever important state changes
-  // In a real app, you'd save to Supabase instead
   const saveWebsite = async () => {
     try {
-      // Update the current page's components
+      // Make sure the current page's components are stored in the pages array
       const updatedPages = pages.map(page => 
         page.id === currentPageId ? { ...page, components } : page
       );
@@ -133,8 +149,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       }
       
       setPages(updatedPages);
-      
-      // In a real app with Supabase, you'd save to the database here
       
       return Promise.resolve();
     } catch (error) {
@@ -222,7 +236,12 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       isHome: false
     };
     
-    setPages(prev => [...prev, newPage]);
+    // Save current page components before switching
+    const updatedPages = pages.map(page => 
+      page.id === currentPageId ? { ...page, components } : page
+    );
+    
+    setPages([...updatedPages, newPage]);
     setCurrentPageId(id);
     setComponents([]);
     setSelectedComponent(null);
@@ -250,18 +269,19 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       setComponents(currentPage.components || []);
       setSelectedComponent(null);
     }
-  }, [currentPageId]);
+  }, [currentPageId, pages]);
   
-  // Save changes when components are updated - adding a dependency array to prevent infinite loop
+  // Save changes when components are updated
   useEffect(() => {
-    // Don't update on the initial render
-    if (components.length > 0) {
+    // Skip the initial render
+    const currentPage = pages.find(page => page.id === currentPageId);
+    if (currentPage && components !== currentPage.components) {
       const updatedPages = pages.map(page => 
         page.id === currentPageId ? { ...page, components } : page
       );
       setPages(updatedPages);
     }
-  }, [components, currentPageId]);
+  }, [components]);
 
   return (
     <BuilderContext.Provider

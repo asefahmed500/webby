@@ -31,7 +31,10 @@ const PublishControl = () => {
     setIsPublishing(true);
     
     try {
-      // Save the website data with publication details
+      // Save the website using the context's saveWebsite function first
+      await saveWebsite();
+      
+      // Then prepare the published version data
       const websiteData = {
         pages,
         publishedAt: new Date().toISOString(),
@@ -40,9 +43,6 @@ const PublishControl = () => {
         websiteName: websiteName || "My Website",
         currentPageId
       };
-      
-      // Save the website using the context's saveWebsite function
-      await saveWebsite();
       
       // Specifically save the published version
       localStorage.setItem("published-website", JSON.stringify(websiteData));
