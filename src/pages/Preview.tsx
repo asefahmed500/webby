@@ -18,52 +18,69 @@ const Preview = () => {
   const { user } = useAuth();
   
   useEffect(() => {
-    // Check if we're previewing a template
-    const template = defaultTemplates.find(t => t.id === pageId);
-    if (template) {
-      setPages(template.pages);
-      setCurrentPage(template.pages.find(p => p.isHome) || template.pages[0]);
-      setIsTemplate(true);
-      setIsLoading(false);
-      return;
-    }
-    
-    // Otherwise, load from localStorage
-    try {
-      setIsLoading(true);
-      const savedData = localStorage.getItem("saved-website");
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
+    const loadWebsiteData = () => {
+      // Check if we're previewing a template
+      const template = defaultTemplates.find(t => t.id === pageId);
+      if (template) {
+        setPages(template.pages);
+        setCurrentPage(template.pages.find(p => p.isHome) || template.pages[0]);
+        setIsTemplate(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Otherwise, load from localStorage - try published version first
+      try {
+        setIsLoading(true);
+        // Try to load the published version first, since we're in preview mode
+        const publishedData = localStorage.getItem("published-website");
+        const savedData = localStorage.getItem("saved-website");
         
-        if (parsedData.pages && Array.isArray(parsedData.pages)) {
-          setPages(parsedData.pages);
+        // Use published data if available, otherwise fall back to saved data
+        const websiteData = publishedData || savedData;
+        
+        if (websiteData) {
+          const parsedData = JSON.parse(websiteData);
           
-          // Set current page based on URL parameter or default to home
-          const pageToShow = parsedData.pages.find((p: Page) => 
-            p.id === pageId || (pageId === undefined && p.isHome)
-          );
-          
-          if (pageToShow) {
-            setCurrentPage(pageToShow);
-          } else {
-            // If page not found, redirect to home
-            const homePage = parsedData.pages.find((p: Page) => p.isHome);
-            if (homePage) {
-              navigate('/preview');
+          if (parsedData.pages && Array.isArray(parsedData.pages)) {
+            console.log("Loading website pages:", parsedData.pages.length);
+            setPages(parsedData.pages);
+            
+            // Set current page based on URL parameter or default to home
+            let pageToShow;
+            
+            if (pageId) {
+              pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
+            } else {
+              // If no pageId in URL, try to find the home page or use the first page
+              pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
             }
+            
+            if (pageToShow) {
+              console.log("Setting current page:", pageToShow.id);
+              setCurrentPage(pageToShow);
+            } else {
+              console.log("Page not found, defaulting to first page");
+              // If page not found, use the first page
+              if (parsedData.pages.length > 0) {
+                setCurrentPage(parsedData.pages[0]);
+              }
+            }
+          } else {
+            console.error("Invalid website data format:", parsedData);
           }
         } else {
-          console.error("Invalid website data format:", parsedData);
+          console.error("No saved or published website found in localStorage");
         }
-      } else {
-        console.error("No saved website found in localStorage");
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error loading website:", error);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error loading website:", error);
-      setIsLoading(false);
-    }
-  }, [pageId, navigate]);
+    };
+    
+    loadWebsiteData();
+  }, [pageId]);
   
   const handleNavigate = (pageId: string) => {
     if (isTemplate) {

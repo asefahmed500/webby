@@ -122,7 +122,8 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         websiteId: websiteId || `website-${Math.random().toString(36).substr(2, 9)}`,
         websiteName,
         updatedAt: new Date().toISOString(),
-        userId: user?.id
+        userId: user?.id,
+        currentPageId
       };
       
       localStorage.setItem("saved-website", JSON.stringify(websiteData));
@@ -249,16 +250,18 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       setComponents(currentPage.components || []);
       setSelectedComponent(null);
     }
-  }, [currentPageId, pages]);
+  }, [currentPageId]);
   
-  // Save changes when components are updated
+  // Save changes when components are updated - adding a dependency array to prevent infinite loop
   useEffect(() => {
-    const updatedPages = pages.map(page => 
-      page.id === currentPageId ? { ...page, components } : page
-    );
-    setPages(updatedPages);
-    // Ideally we'd debounce this in a real app
-  }, [components]);
+    // Don't update on the initial render
+    if (components.length > 0) {
+      const updatedPages = pages.map(page => 
+        page.id === currentPageId ? { ...page, components } : page
+      );
+      setPages(updatedPages);
+    }
+  }, [components, currentPageId]);
 
   return (
     <BuilderContext.Provider

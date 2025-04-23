@@ -17,11 +17,11 @@ import { Globe, Check } from "lucide-react";
 
 const PublishControl = () => {
   const { user } = useAuth();
-  const { publishStatus, setPublishStatus, pages, websiteName } = useBuilder();
+  const { publishStatus, setPublishStatus, pages, websiteName, saveWebsite, currentPageId } = useBuilder();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!user) {
       toast.error("Please log in to publish your website");
       setIsDialogOpen(false);
@@ -30,20 +30,24 @@ const PublishControl = () => {
     
     setIsPublishing(true);
     
-    // Save the website data with publication details
-    const websiteData = {
-      pages,
-      publishedAt: new Date().toISOString(),
-      userId: user.id,
-      publishStatus: "published",
-      websiteName: websiteName || "My Website"
-    };
-    
-    // Simulate publishing process
-    setTimeout(() => {
-      localStorage.setItem("saved-website", JSON.stringify(websiteData));
+    try {
+      // Save the website data with publication details
+      const websiteData = {
+        pages,
+        publishedAt: new Date().toISOString(),
+        userId: user.id,
+        publishStatus: "published",
+        websiteName: websiteName || "My Website",
+        currentPageId
+      };
+      
+      // Save the website using the context's saveWebsite function
+      await saveWebsite();
+      
+      // Specifically save the published version
+      localStorage.setItem("published-website", JSON.stringify(websiteData));
+      
       setPublishStatus("published");
-      setIsPublishing(false);
       setIsDialogOpen(false);
       
       toast.success("Website published successfully!", {
@@ -53,7 +57,12 @@ const PublishControl = () => {
           onClick: () => window.open("/preview", "_blank"),
         },
       });
-    }, 1000);
+    } catch (error) {
+      console.error("Error publishing website:", error);
+      toast.error("Failed to publish website");
+    } finally {
+      setIsPublishing(false);
+    }
   };
   
   return (
