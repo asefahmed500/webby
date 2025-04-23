@@ -1,4 +1,3 @@
-
 /**
  * Supabase Setup Guide for Website Builder Platform
  * 
@@ -8,10 +7,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Type definitions for working around type checking issues
-type AnyTable = any;
-type AnyColumn = any;
-type AnyRecord = Record<string, any>;
+// Type assertion function to bypass type checking issues
+const asTable = (tableName: string) => tableName as never;
+const asColumn = (columnName: string) => columnName as never;
+const asRecord = (data: Record<string, any>) => data as never;
+const asRecordArray = (data: Record<string, any>[]) => data as never[];
 
 /**
  * Step 1: Create a Supabase Project
@@ -229,37 +229,37 @@ export const authExamples = {
 // Database operations examples
 export const databaseExamples = {
   // Create a new website
-  createWebsite: async (websiteData: AnyRecord) => {
+  createWebsite: async (websiteData: Record<string, any>) => {
     const { data, error } = await supabase
-      .from('websites' as AnyTable)
-      .insert([websiteData as AnyRecord] as AnyRecord[])
-      .select('*' as AnyColumn);
+      .from(asTable('websites'))
+      .insert([asRecord(websiteData)])
+      .select(asColumn('*'));
     return { data, error };
   },
   
   // Get user websites
   getUserWebsites: async (userId: string) => {
     const { data, error } = await supabase
-      .from('websites' as AnyTable)
-      .select('*' as AnyColumn)
+      .from(asTable('websites'))
+      .select(asColumn('*'))
       .eq('user_id', userId);
     return { data, error };
   },
   
   // Update website
-  updateWebsite: async (id: string, websiteData: AnyRecord) => {
+  updateWebsite: async (id: string, websiteData: Record<string, any>) => {
     const { data, error } = await supabase
-      .from('websites' as AnyTable)
-      .update(websiteData as AnyRecord)
+      .from(asTable('websites'))
+      .update(asRecord(websiteData))
       .eq('id', id)
-      .select('*' as AnyColumn);
+      .select(asColumn('*'));
     return { data, error };
   },
   
   // Delete website
   deleteWebsite: async (id: string) => {
     const { error } = await supabase
-      .from('websites' as AnyTable)
+      .from(asTable('websites'))
       .delete()
       .eq('id', id);
     return { error };
