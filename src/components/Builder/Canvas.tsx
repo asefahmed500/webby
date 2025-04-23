@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { useBuilder } from "@/context/BuilderContext";
 import DraggableComponent from "./DraggableComponent";
 import { cn } from "@/lib/utils";
@@ -49,6 +48,9 @@ const Canvas = () => {
     setSelectedComponent(null);
   };
 
+  // Check if components is ready to render to avoid flickering
+  const showEmptyState = components.length === 0 && !previewMode;
+
   return (
     <div 
       className={cn(
@@ -66,7 +68,7 @@ const Canvas = () => {
         onDrop={!previewMode ? handleDrop : undefined}
         onDragStart={(e) => draggedComponent && handleCanvasDragStart(e, draggedComponent)}
       >
-        {components.length === 0 && !previewMode ? (
+        {showEmptyState ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400">
             <p className="mb-2">Drag and drop components here</p>
             <p className="text-sm">or select a template from the sidebar</p>

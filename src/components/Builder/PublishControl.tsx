@@ -13,13 +13,18 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Globe, Check } from "lucide-react";
+import { Globe, Check, ExternalLink } from "lucide-react";
 
 const PublishControl = () => {
   const { user } = useAuth();
   const { publishStatus, setPublishStatus, pages, websiteName, saveWebsite, currentPageId } = useBuilder();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const getLiveUrl = () => {
+    // Generate a URL for the live site preview
+    return `${window.location.origin}/preview`;
+  };
   
   const handlePublish = async () => {
     if (!user) {
@@ -31,7 +36,7 @@ const PublishControl = () => {
     setIsPublishing(true);
     
     try {
-      // Save the website using the context's saveWebsite function first
+      // First save the website to make sure all changes are stored
       await saveWebsite();
       
       // Get the latest saved data from localStorage
@@ -42,7 +47,7 @@ const PublishControl = () => {
       
       const parsedData = JSON.parse(savedData);
       
-      // Then prepare the published version data with the saved pages
+      // Then prepare the published version data
       const websiteData = {
         pages: parsedData.pages || [],
         publishedAt: new Date().toISOString(),
@@ -54,17 +59,20 @@ const PublishControl = () => {
       
       console.log("Publishing website data:", JSON.stringify(websiteData));
       
-      // Specifically save the published version
+      // Save the published version
       localStorage.setItem("published-website", JSON.stringify(websiteData));
       
+      // Update publish status
       setPublishStatus("published");
       setIsDialogOpen(false);
+      
+      const liveUrl = getLiveUrl();
       
       toast.success("Website published successfully!", {
         description: "Your website is now live.",
         action: {
           label: "View Site",
-          onClick: () => window.open("/preview", "_blank"),
+          onClick: () => window.open(liveUrl, "_blank"),
         },
       });
     } catch (error) {
@@ -73,6 +81,10 @@ const PublishControl = () => {
     } finally {
       setIsPublishing(false);
     }
+  };
+  
+  const handleViewLive = () => {
+    window.open(getLiveUrl(), "_blank");
   };
   
   return (
@@ -117,6 +129,19 @@ const PublishControl = () => {
                 <p className="text-amber-800 text-sm">
                   You need to be logged in to publish your website. Your changes will be saved but not published.
                 </p>
+              </div>
+            )}
+            
+            {publishStatus === "published" && (
+              <div className="border rounded-md p-3 bg-blue-50">
+                <p className="text-blue-800 text-sm font-medium mb-2">Your website is live at:</p>
+                <div className="flex items-center justify-between">
+                  <code className="bg-white px-2 py-1 rounded text-sm">{getLiveUrl()}</code>
+                  <Button variant="outline" size="sm" onClick={handleViewLive} className="ml-2">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                </div>
               </div>
             )}
             
