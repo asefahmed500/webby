@@ -1,6 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Type definitions for working around type checking issues
+type AnyTable = any;
+type AnyColumn = any;
+type AnyRecord = Record<string, any>;
+
 // Authentication services
 export const authService = {
   // Sign up a new user
@@ -43,19 +48,19 @@ export const authService = {
 // Database operations services
 export const databaseService = {
   // Create a new website
-  createWebsite: async (websiteData: any) => {
+  createWebsite: async (websiteData: AnyRecord) => {
     const { data, error } = await supabase
-      .from('websites' as any)
-      .insert([websiteData] as any)
-      .select();
+      .from('websites' as AnyTable)
+      .insert([websiteData as AnyRecord] as AnyRecord[])
+      .select('*' as AnyColumn);
     return { data, error };
   },
   
   // Get user websites
   getUserWebsites: async (userId: string) => {
     const { data, error } = await supabase
-      .from('websites' as any)
-      .select('*' as any)
+      .from('websites' as AnyTable)
+      .select('*' as AnyColumn)
       .eq('user_id', userId);
     return { data, error };
   },
@@ -63,27 +68,27 @@ export const databaseService = {
   // Get website by ID
   getWebsiteById: async (id: string) => {
     const { data, error } = await supabase
-      .from('websites' as any)
-      .select('*' as any)
+      .from('websites' as AnyTable)
+      .select('*' as AnyColumn)
       .eq('id', id)
       .single();
     return { data, error };
   },
   
   // Update website
-  updateWebsite: async (id: string, websiteData: any) => {
+  updateWebsite: async (id: string, websiteData: AnyRecord) => {
     const { data, error } = await supabase
-      .from('websites' as any)
-      .update(websiteData as any)
+      .from('websites' as AnyTable)
+      .update(websiteData as AnyRecord)
       .eq('id', id)
-      .select();
+      .select('*' as AnyColumn);
     return { data, error };
   },
   
   // Delete website
   deleteWebsite: async (id: string) => {
     const { error } = await supabase
-      .from('websites' as any)
+      .from('websites' as AnyTable)
       .delete()
       .eq('id', id);
     return { error };
@@ -91,34 +96,34 @@ export const databaseService = {
   
   // Pages operations
   pages: {
-    create: async (pageData: any) => {
+    create: async (pageData: AnyRecord) => {
       const { data, error } = await supabase
-        .from('pages' as any)
-        .insert([pageData] as any)
-        .select();
+        .from('pages' as AnyTable)
+        .insert([pageData as AnyRecord] as AnyRecord[])
+        .select('*' as AnyColumn);
       return { data, error };
     },
     
     getByWebsite: async (websiteId: string) => {
       const { data, error } = await supabase
-        .from('pages' as any)
-        .select('*' as any)
+        .from('pages' as AnyTable)
+        .select('*' as AnyColumn)
         .eq('website_id', websiteId);
       return { data, error };
     },
     
-    update: async (id: string, pageData: any) => {
+    update: async (id: string, pageData: AnyRecord) => {
       const { data, error } = await supabase
-        .from('pages' as any)
-        .update(pageData as any)
+        .from('pages' as AnyTable)
+        .update(pageData as AnyRecord)
         .eq('id', id)
-        .select();
+        .select('*' as AnyColumn);
       return { data, error };
     },
     
     delete: async (id: string) => {
       const { error } = await supabase
-        .from('pages' as any)
+        .from('pages' as AnyTable)
         .delete()
         .eq('id', id);
       return { error };
