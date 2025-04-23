@@ -26,7 +26,7 @@ import {
 import PageManager from "./PageManager";
 
 const Toolbar = () => {
-  const { components, setComponents, previewMode, pages, currentPageId, websiteName } = useBuilder();
+  const { components, setComponents, previewMode, pages, currentPageId, websiteName, saveWebsite } = useBuilder();
   const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -37,10 +37,14 @@ const Toolbar = () => {
     return null;
   }
 
-  const handleSave = () => {
-    const data = JSON.stringify({ pages, websiteName });
-    localStorage.setItem("saved-website", data);
-    toast.success("Website saved successfully!");
+  const handleSave = async () => {
+    try {
+      await saveWebsite();
+      toast.success("Website saved successfully!");
+    } catch (error) {
+      console.error("Error saving website:", error);
+      toast.error("Failed to save website");
+    }
   };
 
   const handleLoad = () => {
@@ -49,7 +53,7 @@ const Toolbar = () => {
       if (savedData) {
         const parsedData = JSON.parse(savedData);
         if (parsedData.pages) {
-          // Handle legacy format or new format
+          window.location.reload(); // Reload the page to load the saved data
           toast.success("Website loaded successfully!");
         } else {
           toast("No saved website found");

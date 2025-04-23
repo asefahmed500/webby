@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { defaultPages, Page } from "@/lib/pageData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -73,11 +73,78 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
 
+  // Initial load from localStorage
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem("saved-website");
+      const publishedData = localStorage.getItem("published-website");
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.pages) {
+          console.log("Loading pages from saved data:", parsedData.pages.length);
+          setPages(parsedData.pages);
+          
+          if (parsedData.publishStatus) {
+            setPublishStatus(parsedData.publishStatus);
+          }
+          
+          if (parsedData.websiteId) {
+            setWebsiteId(parsedData.websiteId);
+          }
+          
+          if (parsedData.websiteName) {
+            setWebsiteName(parsedData.websiteName);
+          }
+          
+          if (parsedData.currentPageId) {
+            setCurrentPageId(parsedData.currentPageId);
+          } else {
+            // Find home page or use first page
+            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+            if (homePage) {
+              setCurrentPageId(homePage.id);
+            }
+          }
+        }
+      } else if (publishedData) {
+        // If no saved data but there's published data, use that
+        const parsedData = JSON.parse(publishedData);
+        if (parsedData.pages) {
+          console.log("No saved data, using published data");
+          setPages(parsedData.pages);
+          setPublishStatus("published");
+          
+          if (parsedData.websiteName) {
+            setWebsiteName(parsedData.websiteName);
+          }
+          
+          if (parsedData.currentPageId) {
+            setCurrentPageId(parsedData.currentPageId);
+          } else {
+            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+            if (homePage) {
+              setCurrentPageId(homePage.id);
+            }
+          }
+        }
+      }
+      
+      setInitialLoadDone(true);
+    } catch (error) {
+      console.error("Error loading saved website:", error);
+      setInitialLoadDone(true);
+    }
+  }, []);
+
   // Check for published status
   useEffect(() => {
+    if (!initialLoadDone) return;
+    
     try {
       const publishedData = localStorage.getItem("published-website");
       if (publishedData) {
@@ -89,45 +156,39 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     } catch (error) {
       console.error("Error checking published status:", error);
     }
-  }, []);
+  }, [initialLoadDone]);
 
-  // Load website data from local storage on startup
+  // Load components when changing pages
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem("saved-website");
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.pages) {
-          setPages(parsedData.pages);
-          if (parsedData.publishStatus) {
-            setPublishStatus(parsedData.publishStatus);
-          }
-          if (parsedData.websiteId) {
-            setWebsiteId(parsedData.websiteId);
-          }
-          if (parsedData.websiteName) {
-            setWebsiteName(parsedData.websiteName);
-          }
-          if (parsedData.currentPageId) {
-            setCurrentPageId(parsedData.currentPageId);
-          } else {
-            // Find home page or use first page
-            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-            if (homePage) {
-              setCurrentPageId(homePage.id);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error loading saved website:", error);
+    if (!initialLoadDone) return;
+    
+    const currentPage = pages.find(page => page.id === currentPageId);
+    if (currentPage) {
+      console.log("Setting components from current page:", currentPage.id, currentPage.components?.length || 0);
+      setComponents(currentPage.components || []);
+      setSelectedComponent(null);
     }
-  }, []);
+  }, [currentPageId, pages, initialLoadDone]);
 
-  // Save to local storage whenever important state changes
+  // Save components when they change
+  const updatePageComponents = useCallback(() => {
+    if (!initialLoadDone) return;
+    
+    setPages(prevPages => 
+      prevPages.map(page => 
+        page.id === currentPageId ? { ...page, components } : page
+      )
+    );
+  }, [components, currentPageId, initialLoadDone]);
+  
+  useEffect(() => {
+    if (!initialLoadDone) return;
+    updatePageComponents();
+  }, [components, updatePageComponents, initialLoadDone]);
+
   const saveWebsite = async () => {
     try {
-      // Make sure the current page's components are stored in the pages array
+      // Update the current page with the latest components first
       const updatedPages = pages.map(page => 
         page.id === currentPageId ? { ...page, components } : page
       );
@@ -142,6 +203,7 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         currentPageId
       };
       
+      console.log("Saving website data:", JSON.stringify(websiteData));
       localStorage.setItem("saved-website", JSON.stringify(websiteData));
       
       if (!websiteId) {
@@ -261,27 +323,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       setComponents(updatedPages[0].components || []);
     }
   };
-  
-  // When changing pages, update the components
-  useEffect(() => {
-    const currentPage = pages.find(page => page.id === currentPageId);
-    if (currentPage) {
-      setComponents(currentPage.components || []);
-      setSelectedComponent(null);
-    }
-  }, [currentPageId, pages]);
-  
-  // Save changes when components are updated
-  useEffect(() => {
-    // Skip the initial render
-    const currentPage = pages.find(page => page.id === currentPageId);
-    if (currentPage && components !== currentPage.components) {
-      const updatedPages = pages.map(page => 
-        page.id === currentPageId ? { ...page, components } : page
-      );
-      setPages(updatedPages);
-    }
-  }, [components]);
 
   return (
     <BuilderContext.Provider

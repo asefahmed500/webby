@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
 import { useAuth } from '@/context/AuthContext';
-import { useBuilder } from '@/context/BuilderContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Home } from 'lucide-react';
@@ -13,12 +12,15 @@ const Preview = () => {
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isTemplate, setIsTemplate] = useState(false);
+  const [websiteName, setWebsiteName] = useState<string>("My Website");
   const { pageId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   
   useEffect(() => {
     const loadWebsiteData = () => {
+      console.log("Loading website data for preview, pageId:", pageId);
+      
       // Check if we're previewing a template
       const template = defaultTemplates.find(t => t.id === pageId);
       if (template) {
@@ -34,17 +36,17 @@ const Preview = () => {
         setIsLoading(true);
         // Try to load the published version first, since we're in preview mode
         const publishedData = localStorage.getItem("published-website");
-        const savedData = localStorage.getItem("saved-website");
         
-        // Use published data if available, otherwise fall back to saved data
-        const websiteData = publishedData || savedData;
-        
-        if (websiteData) {
-          const parsedData = JSON.parse(websiteData);
+        if (publishedData) {
+          console.log("Found published website data");
+          const parsedData = JSON.parse(publishedData);
           
           if (parsedData.pages && Array.isArray(parsedData.pages)) {
-            console.log("Loading website pages:", parsedData.pages.length);
+            console.log("Loading published pages:", parsedData.pages.length);
             setPages(parsedData.pages);
+            if (parsedData.websiteName) {
+              setWebsiteName(parsedData.websiteName);
+            }
             
             // Set current page based on URL parameter or default to home
             let pageToShow;
@@ -67,15 +69,54 @@ const Preview = () => {
               }
             }
           } else {
-            console.error("Invalid website data format:", parsedData);
+            // Fall back to saved website if published data is invalid
+            loadSavedWebsite();
           }
         } else {
-          console.error("No saved or published website found in localStorage");
+          console.log("No published website found, trying saved website");
+          loadSavedWebsite();
         }
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading website:", error);
         setIsLoading(false);
+      }
+    };
+    
+    const loadSavedWebsite = () => {
+      const savedData = localStorage.getItem("saved-website");
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.pages && Array.isArray(parsedData.pages)) {
+            console.log("Loading saved pages:", parsedData.pages.length);
+            setPages(parsedData.pages);
+            if (parsedData.websiteName) {
+              setWebsiteName(parsedData.websiteName);
+            }
+            
+            // Set current page based on URL parameter or default to home
+            let pageToShow;
+            
+            if (pageId) {
+              pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
+            } else {
+              // If no pageId in URL, try to find the home page or use the first page
+              pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+            }
+            
+            if (pageToShow) {
+              setCurrentPage(pageToShow);
+            } else {
+              // If page not found, use the first page
+              if (parsedData.pages.length > 0) {
+                setCurrentPage(parsedData.pages[0]);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing saved website data:", error);
+        }
       }
     };
     
@@ -151,7 +192,7 @@ const Preview = () => {
                 {isTemplate ? 'Back to Templates' : (user ? 'Back to Dashboard' : 'Back to Editor')}
               </Button>
               <h1 className="font-medium">
-                {isTemplate ? 'Template Preview' : 'Preview Mode'}
+                {isTemplate ? 'Template Preview' : websiteName}
               </h1>
             </div>
             

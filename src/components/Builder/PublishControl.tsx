@@ -34,15 +34,25 @@ const PublishControl = () => {
       // Save the website using the context's saveWebsite function first
       await saveWebsite();
       
-      // Then prepare the published version data
+      // Get the latest saved data from localStorage
+      const savedData = localStorage.getItem("saved-website");
+      if (!savedData) {
+        throw new Error("No saved website data found");
+      }
+      
+      const parsedData = JSON.parse(savedData);
+      
+      // Then prepare the published version data with the saved pages
       const websiteData = {
-        pages,
+        pages: parsedData.pages || [],
         publishedAt: new Date().toISOString(),
         userId: user.id,
         publishStatus: "published",
         websiteName: websiteName || "My Website",
         currentPageId
       };
+      
+      console.log("Publishing website data:", JSON.stringify(websiteData));
       
       // Specifically save the published version
       localStorage.setItem("published-website", JSON.stringify(websiteData));
