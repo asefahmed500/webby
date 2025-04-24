@@ -1,4 +1,5 @@
 
+import React, { useCallback } from "react";
 import { useBuilder, Component } from "@/context/BuilderContext";
 import { cn } from "@/lib/utils";
 
@@ -21,16 +22,16 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   
   const isSelected = selectedComponent?.id === component.id;
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedComponent(component);
-  };
+  }, [component, setSelectedComponent]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -43,7 +44,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     if (componentType && (component.type === "container" || component.type === "card" || component.type === "navigation" || component.type === "footer" || component.type === "form" || component.type === "testimonial")) {
       addComponent(componentType, component.id);
     }
-  };
+  }, [component, addComponent]);
 
   const renderComponentContent = () => {
     switch (component.type) {
@@ -157,4 +158,4 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   );
 };
 
-export default DraggableComponent;
+export default React.memo(DraggableComponent);

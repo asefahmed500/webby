@@ -1,4 +1,5 @@
 
+import React, { useCallback } from "react";
 import { useBuilder } from "@/context/BuilderContext";
 import DraggableComponent from "./DraggableComponent";
 import { cn } from "@/lib/utils";
@@ -15,11 +16,11 @@ const Canvas = () => {
     previewMode
   } = useBuilder();
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     
     if (!draggedComponent) return;
@@ -30,7 +31,9 @@ const Canvas = () => {
       const template = templates.find(t => t.id === templateId);
       
       if (template) {
-        setComponents(prev => [...prev, ...template.components]);
+        // Create deep copy of template components to avoid reference issues
+        const templateComponentsCopy = JSON.parse(JSON.stringify(template.components));
+        setComponents(prev => [...prev, ...templateComponentsCopy]);
       }
     } else {
       // Handle component drop
@@ -38,15 +41,15 @@ const Canvas = () => {
     }
     
     setDraggedComponent(null);
-  };
+  }, [draggedComponent, setDraggedComponent, setComponents, addComponent]);
 
-  const handleCanvasDragStart = (e: React.DragEvent, componentType: string) => {
+  const handleCanvasDragStart = useCallback((e: React.DragEvent, componentType: string) => {
     e.dataTransfer.setData("componentType", componentType);
-  };
+  }, []);
 
-  const handleCanvasClick = () => {
+  const handleCanvasClick = useCallback(() => {
     setSelectedComponent(null);
-  };
+  }, [setSelectedComponent]);
 
   // Check if components is ready to render to avoid flickering
   const showEmptyState = components.length === 0 && !previewMode;
@@ -86,4 +89,4 @@ const Canvas = () => {
   );
 };
 
-export default Canvas;
+export default React.memo(Canvas);
