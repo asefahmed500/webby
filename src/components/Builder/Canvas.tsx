@@ -54,9 +54,6 @@ const Canvas = () => {
     setSelectedComponent(null);
   }, [setSelectedComponent]);
 
-  // Check if components is ready to render to avoid flickering
-  const showEmptyState = components.length === 0 && !previewMode;
-
   return (
     <>
       {/* Add navbar */}
