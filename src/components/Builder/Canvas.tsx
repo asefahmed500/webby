@@ -1,9 +1,12 @@
 
 import React, { useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useBuilder } from "@/context/BuilderContext";
 import DraggableComponent from "./DraggableComponent";
 import { cn } from "@/lib/utils";
 import { templates } from "@/lib/componentData";
+import { Button } from "@/components/ui/button";
+import { Home, User } from "lucide-react";
 
 const Canvas = () => {
   const { 
@@ -55,37 +58,59 @@ const Canvas = () => {
   const showEmptyState = components.length === 0 && !previewMode;
 
   return (
-    <div 
-      className={cn(
-        "flex-1 overflow-auto",
-        previewMode ? "bg-white" : "bg-gray-50"
-      )}
-      onClick={handleCanvasClick}
-    >
-      <div
-        className={cn(
-          "min-h-full w-full p-8",
-          previewMode ? "" : "shadow-sm"
-        )}
-        onDragOver={handleDragOver}
-        onDrop={!previewMode ? handleDrop : undefined}
-        onDragStart={(e) => draggedComponent && handleCanvasDragStart(e, draggedComponent)}
-      >
-        {showEmptyState ? (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
-            <p className="mb-2">Drag and drop components here</p>
-            <p className="text-sm">or select a template from the sidebar</p>
+    <>
+      {/* Add navbar */}
+      {!previewMode && (
+        <div className="h-14 border-b border-gray-200 bg-white px-4 flex items-center justify-between sticky top-0 z-50">
+          <div className="flex items-center space-x-4">
+            <Link to="/">
+              <Button variant="ghost" size="sm">
+                <Home className="h-4 w-4 mr-2" />
+                Home
+              </Button>
+            </Link>
+            <Link to="/profile">
+              <Button variant="ghost" size="sm">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+            </Link>
           </div>
-        ) : (
-          components.map((component) => (
-            <DraggableComponent 
-              key={component.id} 
-              component={component} 
-            />
-          ))
+        </div>
+      )}
+      
+      <div 
+        className={cn(
+          "flex-1 overflow-auto",
+          previewMode ? "bg-white" : "bg-gray-50"
         )}
+        onClick={handleCanvasClick}
+      >
+        <div
+          className={cn(
+            "min-h-full w-full p-8",
+            previewMode ? "" : "shadow-sm"
+          )}
+          onDragOver={handleDragOver}
+          onDrop={!previewMode ? handleDrop : undefined}
+          onDragStart={(e) => draggedComponent && handleCanvasDragStart(e, draggedComponent)}
+        >
+          {components.length === 0 && !previewMode ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+              <p className="mb-2">Drag and drop components here</p>
+              <p className="text-sm">or select a template from the sidebar</p>
+            </div>
+          ) : (
+            components.map((component) => (
+              <DraggableComponent 
+                key={component.id} 
+                component={component} 
+              />
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
