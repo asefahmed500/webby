@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireAuth } from "@/hooks/useRedirectAuth";
 import { toast } from "sonner";
-import { Layout, BookOpen, Briefcase, ShoppingBag, Calendar } from "lucide-react";
+import { Layout, BookOpen, Briefcase, ShoppingBag, Calendar, FilePlus } from "lucide-react";
 import { defaultWebsite, Website } from "@/lib/pageData";
 import { defaultTemplates } from "@/lib/templateData";
 
@@ -16,11 +15,31 @@ const TemplatesPage = () => {
   const navigate = useNavigate();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   
-  // Require authentication for this page
   useRequireAuth();
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
+  };
+
+  const createBlankWebsite = () => {
+    try {
+      const blankWebsite: Website = {
+        ...defaultWebsite,
+        id: `website-${Math.random().toString(36).substr(2, 9)}`,
+        name: "My Blank Website",
+        description: "A website built from scratch",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: user?.id
+      };
+      
+      localStorage.setItem("saved-website", JSON.stringify(blankWebsite));
+      toast.success("Blank website created successfully!");
+      navigate("/");
+    } catch (error) {
+      console.error("Error creating blank website:", error);
+      toast.error("Failed to create website");
+    }
   };
 
   const handleCreateWebsite = () => {
@@ -30,7 +49,6 @@ const TemplatesPage = () => {
     }
 
     try {
-      // Get the selected template
       const template = defaultTemplates.find(t => t.id === selectedTemplate);
       
       if (!template) {
@@ -38,7 +56,6 @@ const TemplatesPage = () => {
         return;
       }
       
-      // Create a new website based on the template
       const newWebsite: Website = {
         ...defaultWebsite,
         id: `website-${Math.random().toString(36).substr(2, 9)}`,
@@ -50,7 +67,6 @@ const TemplatesPage = () => {
         userId: user?.id
       };
       
-      // Save the new website to localStorage
       localStorage.setItem("saved-website", JSON.stringify(newWebsite));
       
       toast.success("Website created successfully!");
@@ -69,11 +85,26 @@ const TemplatesPage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Choose a Website Template</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Select a template to get started with your new website. All templates are fully customizable.
+            Start with a blank template or select from our pre-designed templates to get started with your new website.
           </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          <Card 
+            className="overflow-hidden cursor-pointer transition-all hover:shadow-lg"
+            onClick={createBlankWebsite}
+          >
+            <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <FilePlus className="h-16 w-16 text-gray-400" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl">Blank Template</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-gray-600 text-sm">Start from scratch with a blank canvas and build your website exactly how you want it.</p>
+            </CardContent>
+          </Card>
+
           {defaultTemplates.map((template) => (
             <Card 
               key={template.id}
