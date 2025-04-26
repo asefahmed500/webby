@@ -1,5 +1,5 @@
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useBuilder, Component } from "@/context/BuilderContext";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,10 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   } = useBuilder();
   
   const isSelected = selectedComponent?.id === component.id;
+
+  // Use memoization to prevent unnecessary re-renders
+  const memoizedChildren = useMemo(() => component.children, [component.children]);
+  const memoizedStyles = useMemo(() => component.styles, [component.styles]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,16 +64,16 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
               "relative",
               !previewMode && "min-h-[50px]"
             )}
-            style={component.styles}
+            style={memoizedStyles}
           >
-            {component.children.map((child) => (
+            {memoizedChildren.map((child) => (
               <DraggableComponent 
                 key={child.id} 
                 component={child} 
                 depth={depth + 1} 
               />
             ))}
-            {!previewMode && component.children.length === 0 && (
+            {!previewMode && memoizedChildren.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
                 Drop components here
               </div>
@@ -77,51 +81,59 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
           </div>
         );
       case "text":
-        return <p style={component.styles}>{component.content}</p>;
+        return <p style={memoizedStyles} className="transition-all">{component.content}</p>;
       case "heading":
-        return <h2 style={component.styles}>{component.content}</h2>;
+        return <h2 style={memoizedStyles} className="transition-all">{component.content}</h2>;
       case "image":
         return (
           <img 
             src={component.content || "https://placehold.co/600x400?text=Image"} 
             alt="Draggable component" 
-            style={component.styles} 
+            style={memoizedStyles}
+            className="transition-all" 
+            loading="lazy"
           />
         );
       case "button":
         return (
           <button 
-            className={previewMode ? "cursor-pointer" : "cursor-default"} 
-            style={component.styles}
+            className={cn(
+              previewMode ? "cursor-pointer" : "cursor-default",
+              "transition-all"
+            )} 
+            style={memoizedStyles}
             onClick={(e) => previewMode ? null : e.preventDefault()}
           >
             {component.content || "Button"}
           </button>
         );
       case "divider":
-        return <hr style={component.styles} />;
+        return <hr style={memoizedStyles} className="transition-all" />;
       case "input":
         return (
           <input 
             type="text" 
             placeholder={component.content || "Enter text..."} 
-            style={component.styles} 
-            className={previewMode ? "cursor-text" : "cursor-default"}
+            style={memoizedStyles} 
+            className={cn(
+              previewMode ? "cursor-text" : "cursor-default",
+              "transition-all"
+            )}
             onClick={(e) => previewMode ? null : e.stopPropagation()}
             readOnly={!previewMode}
           />
         );
       case "pricing":
         return (
-          <div style={component.styles} className="pricing-block">
-            {component.children.map((child) => (
+          <div style={memoizedStyles} className="pricing-block transition-all">
+            {memoizedChildren.map((child) => (
               <DraggableComponent 
                 key={child.id} 
                 component={child} 
                 depth={depth + 1} 
               />
             ))}
-            {!previewMode && component.children.length === 0 && (
+            {!previewMode && memoizedChildren.length === 0 && (
               <div className="flex items-center justify-center text-gray-400 text-sm h-[100px]">
                 Pricing component (add content)
               </div>
@@ -133,14 +145,15 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     }
   };
 
-  // Don't show selection UI in preview mode
-  const selectionClasses = previewMode 
-    ? "" 
-    : cn(
-        "transition-all",
-        isSelected && "outline outline-2 outline-blue-500",
-        isDragging && "opacity-50"
-      );
+  // Optimize selection UI render
+  const selectionClasses = useMemo(() => {
+    if (previewMode) return "";
+    return cn(
+      "transition-all",
+      isSelected && "outline outline-2 outline-blue-500",
+      isDragging && "opacity-50"
+    );
+  }, [previewMode, isSelected, isDragging]);
 
   return (
     <div

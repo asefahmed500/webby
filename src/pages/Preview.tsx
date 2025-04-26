@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
 import { useAuth } from '@/context/AuthContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Home } from 'lucide-react';
+import { ArrowLeft, Edit, Home, Loader2 } from 'lucide-react';
 import { defaultTemplates } from '@/lib/templateData';
+import { cn } from '@/lib/utils';
 
 const Preview = () => {
   const [pages, setPages] = useState<Page[]>([]);
@@ -17,115 +18,104 @@ const Preview = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  useEffect(() => {
-    const loadWebsiteData = () => {
-      console.log("Loading website data for preview, pageId:", pageId);
+  const loadWebsiteData = useCallback(() => {
+    console.log("Loading website data for preview, pageId:", pageId);
+    
+    const template = defaultTemplates.find(t => t.id === pageId);
+    if (template) {
+      setPages(template.pages);
+      setCurrentPage(template.pages.find(p => p.isHome) || template.pages[0]);
+      setIsTemplate(true);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const publishedData = localStorage.getItem("published-website");
       
-      // Check if we're previewing a template
-      const template = defaultTemplates.find(t => t.id === pageId);
-      if (template) {
-        setPages(template.pages);
-        setCurrentPage(template.pages.find(p => p.isHome) || template.pages[0]);
-        setIsTemplate(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Otherwise, load from localStorage - try published version first
-      try {
-        setIsLoading(true);
-        // Try to load the published version first, since we're in preview mode
-        const publishedData = localStorage.getItem("published-website");
+      if (publishedData) {
+        console.log("Found published website data");
+        const parsedData = JSON.parse(publishedData);
         
-        if (publishedData) {
-          console.log("Found published website data");
-          const parsedData = JSON.parse(publishedData);
+        if (parsedData.pages && Array.isArray(parsedData.pages)) {
+          console.log("Loading published pages:", parsedData.pages.length);
+          setPages(parsedData.pages);
+          if (parsedData.websiteName) {
+            setWebsiteName(parsedData.websiteName);
+          }
           
-          if (parsedData.pages && Array.isArray(parsedData.pages)) {
-            console.log("Loading published pages:", parsedData.pages.length);
-            setPages(parsedData.pages);
-            if (parsedData.websiteName) {
-              setWebsiteName(parsedData.websiteName);
-            }
-            
-            // Set current page based on URL parameter or default to home
-            let pageToShow;
-            
-            if (pageId) {
-              pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
-            } else {
-              // If no pageId in URL, try to find the home page or use the first page
-              pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-            }
-            
-            if (pageToShow) {
-              console.log("Setting current page:", pageToShow.id);
-              setCurrentPage(pageToShow);
-            } else {
-              console.log("Page not found, defaulting to first page");
-              // If page not found, use the first page
-              if (parsedData.pages.length > 0) {
-                setCurrentPage(parsedData.pages[0]);
-              }
-            }
+          let pageToShow;
+          
+          if (pageId) {
+            pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
           } else {
-            // Fall back to saved website if published data is invalid
-            loadSavedWebsite();
+            pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+          }
+          
+          if (pageToShow) {
+            console.log("Setting current page:", pageToShow.id);
+            setCurrentPage(pageToShow);
+          } else {
+            console.log("Page not found, defaulting to first page");
+            if (parsedData.pages.length > 0) {
+              setCurrentPage(parsedData.pages[0]);
+            }
           }
         } else {
-          console.log("No published website found, trying saved website");
           loadSavedWebsite();
         }
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error loading website:", error);
-        setIsLoading(false);
+      } else {
+        console.log("No published website found, trying saved website");
+        loadSavedWebsite();
       }
-    };
-    
-    const loadSavedWebsite = () => {
-      const savedData = localStorage.getItem("saved-website");
-      if (savedData) {
-        try {
-          const parsedData = JSON.parse(savedData);
-          if (parsedData.pages && Array.isArray(parsedData.pages)) {
-            console.log("Loading saved pages:", parsedData.pages.length);
-            setPages(parsedData.pages);
-            if (parsedData.websiteName) {
-              setWebsiteName(parsedData.websiteName);
-            }
-            
-            // Set current page based on URL parameter or default to home
-            let pageToShow;
-            
-            if (pageId) {
-              pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
-            } else {
-              // If no pageId in URL, try to find the home page or use the first page
-              pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-            }
-            
-            if (pageToShow) {
-              setCurrentPage(pageToShow);
-            } else {
-              // If page not found, use the first page
-              if (parsedData.pages.length > 0) {
-                setCurrentPage(parsedData.pages[0]);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error parsing saved website data:", error);
-        }
-      }
-    };
-    
-    loadWebsiteData();
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error loading website:", error);
+      setIsLoading(false);
+    }
   }, [pageId]);
   
-  const handleNavigate = (pageId: string) => {
+  const loadSavedWebsite = useCallback(() => {
+    const savedData = localStorage.getItem("saved-website");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.pages && Array.isArray(parsedData.pages)) {
+          console.log("Loading saved pages:", parsedData.pages.length);
+          setPages(parsedData.pages);
+          if (parsedData.websiteName) {
+            setWebsiteName(parsedData.websiteName);
+          }
+          
+          let pageToShow;
+          
+          if (pageId) {
+            pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
+          } else {
+            pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+          }
+          
+          if (pageToShow) {
+            setCurrentPage(pageToShow);
+          } else {
+            if (parsedData.pages.length > 0) {
+              setCurrentPage(parsedData.pages[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing saved website data:", error);
+      }
+    }
+  }, [pageId]);
+  
+  useEffect(() => {
+    loadWebsiteData();
+  }, [loadWebsiteData]);
+  
+  const handleNavigate = useCallback((pageId: string) => {
     if (isTemplate) {
-      // Stay on the same template but show different page
       const page = pages.find(p => p.id === pageId);
       if (page) {
         setCurrentPage(page);
@@ -133,20 +123,19 @@ const Preview = () => {
     } else {
       navigate(`/preview/${pageId === 'home' ? '' : pageId}`);
     }
-  };
+  }, [isTemplate, pages, navigate]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     if (isTemplate) {
-      // If viewing a template, go to template selection
       navigate('/templates');
     } else {
       navigate('/');
     }
-  };
+  }, [isTemplate, navigate]);
 
-  const handleDashboard = () => {
+  const handleDashboard = useCallback(() => {
     navigate('/dashboard');
-  };
+  }, [navigate]);
   
   if (isLoading) {
     return (
@@ -161,7 +150,7 @@ const Preview = () => {
   
   if (!currentPage || pages.length === 0) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center">
+      <div className="h-screen flex flex-col items-center justify-center animate-fade-in">
         <h1 className="text-2xl font-bold mb-4">Website not found</h1>
         <p className="text-gray-600 mb-6">No published website content is available.</p>
         <div className="flex gap-4">
@@ -182,8 +171,7 @@ const Preview = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navigation */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
+      <header className="bg-white border-b shadow-sm sticky top-0 z-10 animate-fade-in">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -202,11 +190,12 @@ const Preview = () => {
                   <li key={page.id}>
                     <button
                       onClick={() => handleNavigate(page.id)}
-                      className={`px-1 py-2 text-sm ${
+                      className={cn(
+                        "px-1 py-2 text-sm transition-all",
                         currentPage?.id === page.id 
                           ? 'text-blue-600 border-b-2 border-blue-600' 
                           : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      )}
                     >
                       {page.name}
                     </button>
@@ -215,7 +204,6 @@ const Preview = () => {
               </ul>
             </nav>
             
-            {/* Mobile page selector */}
             <div className="block md:hidden">
               <select 
                 className="border rounded px-2 py-1 text-sm"
@@ -230,7 +218,7 @@ const Preview = () => {
               </select>
             </div>
 
-            <Button onClick={handleEdit}>
+            <Button onClick={handleEdit} className="transition-colors">
               {isTemplate ? 'Use This Template' : (
                 <>
                   <Edit className="h-4 w-4 mr-1" />
@@ -242,8 +230,7 @@ const Preview = () => {
         </div>
       </header>
       
-      {/* Page Content */}
-      <main className="flex-1 bg-white">
+      <main className="flex-1 bg-white animate-fade-in">
         <div className="container mx-auto px-4 py-8">
           {currentPage?.components && currentPage.components.length > 0 ? (
             currentPage.components.map((component) => (
@@ -272,4 +259,4 @@ const Preview = () => {
   );
 };
 
-export default Preview;
+export default React.memo(Preview);

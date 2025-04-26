@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from "react";
 import { defaultPages, Page } from "@/lib/pageData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -74,6 +74,9 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  
+  // Use a debounced state update for smoother component updates
+  const [updateTimeout, setUpdateTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -158,33 +161,53 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [initialLoadDone]);
 
-  // Load components when changing pages
+  // Load components when changing pages - optimize with useMemo
   useEffect(() => {
     if (!initialLoadDone) return;
     
     const currentPage = pages.find(page => page.id === currentPageId);
     if (currentPage) {
       console.log("Setting components from current page:", currentPage.id, currentPage.components?.length || 0);
-      setComponents(currentPage.components || []);
+      
+      // Use a deep copy to avoid reference issues
+      const componentsCopy = currentPage.components ? 
+        JSON.parse(JSON.stringify(currentPage.components)) : [];
+        
+      setComponents(componentsCopy);
       setSelectedComponent(null);
     }
   }, [currentPageId, pages, initialLoadDone]);
 
-  // Save components when they change
+  // Save components when they change - use debounce for performance
   const updatePageComponents = useCallback(() => {
     if (!initialLoadDone) return;
     
-    setPages(prevPages => 
-      prevPages.map(page => 
-        page.id === currentPageId ? { ...page, components } : page
-      )
-    );
-  }, [components, currentPageId, initialLoadDone]);
+    if (updateTimeout) {
+      clearTimeout(updateTimeout);
+    }
+    
+    const timeoutId = setTimeout(() => {
+      setPages(prevPages => 
+        prevPages.map(page => 
+          page.id === currentPageId ? { ...page, components } : page
+        )
+      );
+    }, 300); // 300ms debounce
+    
+    setUpdateTimeout(timeoutId as unknown as NodeJS.Timeout);
+    
+  }, [components, currentPageId, initialLoadDone, updateTimeout]);
   
   useEffect(() => {
     if (!initialLoadDone) return;
     updatePageComponents();
-  }, [components, updatePageComponents, initialLoadDone]);
+    
+    return () => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+    };
+  }, [components, updatePageComponents, initialLoadDone, updateTimeout]);
 
   const saveWebsite = async () => {
     try {
@@ -219,7 +242,8 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const addComponent = (type: string, targetId?: string) => {
+  // Optimized component operations with deep cloning to prevent state reference issues
+  const addComponent = useCallback((type: string, targetId?: string) => {
     const newComponent: Component = {
       id: generateId(),
       type,
@@ -233,25 +257,37 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       return;
     }
 
-    // Add as a child of the target component
-    const updatedComponents = components.map(component => {
-      if (component.id === targetId) {
-        return {
-          ...component,
-          children: [...component.children, newComponent]
-        };
-      }
-      return component;
-    });
+    // Add as a child of the target component using deep copy to avoid reference issues
+    const updatedComponents = JSON.parse(JSON.stringify(components));
     
-    setComponents(updatedComponents);
-  };
+    const addToChildren = (items: Component[]) => {
+      return items.map(item => {
+        if (item.id === targetId) {
+          return {
+            ...item,
+            children: [...item.children, newComponent]
+          };
+        }
+        if (item.children.length > 0) {
+          return {
+            ...item,
+            children: addToChildren(item.children)
+          };
+        }
+        return item;
+      });
+    };
+    
+    setComponents(addToChildren(updatedComponents));
+  }, [components]);
 
-  const updateComponent = (id: string, updates: Partial<Component>) => {
+  // Optimized update component without unnecessary re-renders
+  const updateComponent = useCallback((id: string, updates: Partial<Component>) => {
     const updateComponentRecursive = (components: Component[]): Component[] => {
       return components.map(component => {
         if (component.id === id) {
-          return { ...component, ...updates };
+          const updatedComponent = { ...component, ...updates };
+          return updatedComponent;
         }
         if (component.children.length > 0) {
           return {
@@ -263,11 +299,11 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       });
     };
 
-    const updatedComponents = updateComponentRecursive(components);
+    const updatedComponents = updateComponentRecursive(JSON.parse(JSON.stringify(components)));
     setComponents(updatedComponents);
-  };
+  }, [components]);
 
-  const removeComponent = (id: string) => {
+  const removeComponent = useCallback((id: string) => {
     const removeComponentRecursive = (components: Component[]): Component[] => {
       return components
         .filter(component => component.id !== id)
@@ -277,16 +313,16 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         }));
     };
 
-    const updatedComponents = removeComponentRecursive(components);
+    const updatedComponents = removeComponentRecursive(JSON.parse(JSON.stringify(components)));
     setComponents(updatedComponents);
     
     if (selectedComponent?.id === id) {
       setSelectedComponent(null);
     }
-  };
+  }, [components, selectedComponent]);
   
-  // Add a new page
-  const addPage = (name: string) => {
+  // Add a new page with optimized handling
+  const addPage = useCallback((name: string) => {
     const id = name.toLowerCase().replace(/\s+/g, '-');
     const path = id === 'home' ? '/' : `/${id}`;
     
@@ -307,10 +343,10 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     setCurrentPageId(id);
     setComponents([]);
     setSelectedComponent(null);
-  };
+  }, [pages, components, currentPageId]);
   
-  // Remove a page
-  const removePage = (id: string) => {
+  // Remove a page with optimized handling
+  const removePage = useCallback((id: string) => {
     // Don't remove the last page
     if (pages.length <= 1) return;
     
@@ -322,39 +358,45 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       setCurrentPageId(updatedPages[0].id);
       setComponents(updatedPages[0].components || []);
     }
-  };
+  }, [pages, currentPageId]);
+
+  // Memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    components,
+    setComponents,
+    selectedComponent,
+    setSelectedComponent,
+    isDragging,
+    setIsDragging,
+    draggedComponent,
+    setDraggedComponent,
+    addComponent,
+    updateComponent,
+    removeComponent,
+    previewMode,
+    setPreviewMode,
+    pages,
+    setPages,
+    currentPageId,
+    setCurrentPageId,
+    addPage,
+    removePage,
+    publishStatus,
+    setPublishStatus,
+    websiteId,
+    setWebsiteId,
+    websiteName,
+    setWebsiteName,
+    saveWebsite
+  }), [
+    components, selectedComponent, isDragging, draggedComponent, 
+    previewMode, pages, currentPageId, publishStatus, websiteId, 
+    websiteName, addComponent, updateComponent, removeComponent,
+    addPage, removePage, saveWebsite
+  ]);
 
   return (
-    <BuilderContext.Provider
-      value={{
-        components,
-        setComponents,
-        selectedComponent,
-        setSelectedComponent,
-        isDragging,
-        setIsDragging,
-        draggedComponent,
-        setDraggedComponent,
-        addComponent,
-        updateComponent,
-        removeComponent,
-        previewMode,
-        setPreviewMode,
-        pages,
-        setPages,
-        currentPageId,
-        setCurrentPageId,
-        addPage,
-        removePage,
-        publishStatus,
-        setPublishStatus,
-        websiteId,
-        setWebsiteId,
-        websiteName,
-        setWebsiteName,
-        saveWebsite
-      }}
-    >
+    <BuilderContext.Provider value={contextValue}>
       {children}
     </BuilderContext.Provider>
   );
