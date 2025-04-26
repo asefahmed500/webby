@@ -1,316 +1,198 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import { Page } from '@/lib/pageData';
-import { useAuth } from '@/context/AuthContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Home, Loader2, Smartphone, Tablet, Monitor } from 'lucide-react';
-import { defaultTemplates } from '@/lib/templateData';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+
+interface PreviewParams {
+  slug?: string;
+}
 
 const Preview = () => {
-  const [pages, setPages] = useState<Page[]>([]);
+  const [website, setWebsite] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTemplate, setIsTemplate] = useState(false);
-  const [websiteName, setWebsiteName] = useState<string>("My Website");
   const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const { pageId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { slug } = useParams<PreviewParams>();
   
-  const loadWebsiteData = useCallback(() => {
-    console.log("Loading website data for preview, pageId:", pageId);
-    
-    const template = defaultTemplates.find(t => t.id === pageId);
-    if (template) {
-      setPages(template.pages);
-      setCurrentPage(template.pages.find(p => p.isHome) || template.pages[0]);
-      setIsTemplate(true);
-      setIsLoading(false);
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      const publishedData = localStorage.getItem("published-website");
-      
-      if (publishedData) {
-        console.log("Found published website data");
-        const parsedData = JSON.parse(publishedData);
+  useEffect(() => {
+    // Load website data
+    const loadWebsite = async () => {
+      try {
+        setLoading(true);
         
-        if (parsedData.pages && Array.isArray(parsedData.pages)) {
-          console.log("Loading published pages:", parsedData.pages.length);
-          setPages(parsedData.pages);
-          if (parsedData.websiteName) {
-            setWebsiteName(parsedData.websiteName);
-          }
-          
-          let pageToShow;
-          
-          if (pageId) {
-            pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
-          } else {
-            pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-          }
-          
-          if (pageToShow) {
-            console.log("Setting current page:", pageToShow.id);
-            setCurrentPage(pageToShow);
-          } else {
-            console.log("Page not found, defaulting to first page");
-            if (parsedData.pages.length > 0) {
-              setCurrentPage(parsedData.pages[0]);
+        // If we have a slug, we load the published website from storage/database
+        if (slug) {
+          const publishedData = localStorage.getItem("published-website");
+          if (publishedData) {
+            const parsedData = JSON.parse(publishedData);
+            setWebsite(parsedData);
+            
+            // Set current page to home page or first page
+            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+            if (homePage) {
+              setCurrentPage(homePage);
             }
           }
         } else {
-          loadSavedWebsite();
-        }
-      } else {
-        console.log("No published website found, trying saved website");
-        loadSavedWebsite();
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error loading website:", error);
-      setIsLoading(false);
-    }
-  }, [pageId]);
-  
-  const loadSavedWebsite = useCallback(() => {
-    const savedData = localStorage.getItem("saved-website");
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.pages && Array.isArray(parsedData.pages)) {
-          console.log("Loading saved pages:", parsedData.pages.length);
-          setPages(parsedData.pages);
-          if (parsedData.websiteName) {
-            setWebsiteName(parsedData.websiteName);
-          }
-          
-          let pageToShow;
-          
-          if (pageId) {
-            pageToShow = parsedData.pages.find((p: Page) => p.id === pageId);
-          } else {
-            pageToShow = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-          }
-          
-          if (pageToShow) {
-            setCurrentPage(pageToShow);
-          } else {
-            if (parsedData.pages.length > 0) {
-              setCurrentPage(parsedData.pages[0]);
+          // No slug, probably a user previewing their own site in-builder
+          const savedData = localStorage.getItem("saved-website");
+          if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            setWebsite(parsedData);
+            
+            // Set current page based on current page in builder
+            const currentPageId = parsedData.currentPageId;
+            const pageToShow = parsedData.pages.find((p: Page) => p.id === currentPageId) || parsedData.pages[0];
+            if (pageToShow) {
+              setCurrentPage(pageToShow);
             }
           }
         }
       } catch (error) {
-        console.error("Error parsing saved website data:", error);
+        console.error("Error loading website for preview:", error);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [pageId]);
+    };
+    
+    loadWebsite();
+  }, [slug]);
   
-  useEffect(() => {
-    loadWebsiteData();
-  }, [loadWebsiteData]);
-  
-  const handleNavigate = useCallback((pageId: string) => {
-    if (isTemplate) {
-      const page = pages.find(p => p.id === pageId);
-      if (page) {
-        setCurrentPage(page);
-      }
-    } else {
-      navigate(`/preview/${pageId === 'home' ? '' : pageId}`);
+  const handlePageChange = (pageId: string) => {
+    const newPage = website?.pages.find((p: Page) => p.id === pageId);
+    if (newPage) {
+      setCurrentPage(newPage);
     }
-  }, [isTemplate, pages, navigate]);
-
-  const handleEdit = useCallback(() => {
-    if (isTemplate) {
-      navigate('/templates');
-    } else {
-      navigate('/');
-    }
-  }, [isTemplate, navigate]);
-
-  const handleDashboard = useCallback(() => {
-    navigate('/dashboard');
-  }, [navigate]);
+  };
   
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading website...</p>
-        </div>
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
   
-  if (!currentPage || pages.length === 0) {
+  if (!website || !currentPage) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center animate-fade-in">
-        <h1 className="text-2xl font-bold mb-4">Website not found</h1>
-        <p className="text-gray-600 mb-6">No published website content is available.</p>
-        <div className="flex gap-4">
-          <Button onClick={() => navigate('/')}>
-            <Edit className="h-4 w-4 mr-1" />
-            Create Website
-          </Button>
-          {user && (
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
-              <Home className="h-4 w-4 mr-1" />
-              Go to Dashboard
-            </Button>
-          )}
-        </div>
+      <div className="w-full h-screen flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-4">Website Not Found</h1>
+        <p className="text-gray-500">The website you're looking for doesn't exist or hasn't been published yet.</p>
       </div>
     );
   }
   
-  // Get viewport class based on selected size
-  const viewportClass = (() => {
+  const viewportClass = () => {
     switch (viewportSize) {
       case 'mobile':
-        return 'max-w-[375px]';
+        return 'max-w-[375px] mx-auto border-x border-gray-200 shadow-sm min-h-[600px]';
       case 'tablet':
-        return 'max-w-[768px]';
+        return 'max-w-[768px] mx-auto border-x border-gray-200 shadow-sm min-h-[800px]';
       default:
-        return 'max-w-full';
+        return 'w-full min-h-screen';
     }
-  })();
+  };
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-10 animate-fade-in">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => isTemplate ? navigate('/templates') : (user ? handleDashboard() : handleEdit())}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                {isTemplate ? 'Back to Templates' : (user ? 'Back to Dashboard' : 'Back to Editor')}
-              </Button>
-              <h1 className="font-medium">
-                {isTemplate ? 'Template Preview' : websiteName}
-              </h1>
-            </div>
+    <>
+      <Helmet>
+        <title>{website.websiteName || "Website Preview"}</title>
+        <meta name="description" content={`Preview of ${website.websiteName}`} />
+      </Helmet>
+      
+      {!slug && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 p-2 flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-sm font-medium mr-4">Preview Mode</span>
             
-            <nav className="hidden md:block">
-              <ul className="flex space-x-6">
-                {pages.map((page) => (
-                  <li key={page.id}>
+            <div className="flex border rounded-md overflow-hidden">
+              <button 
+                className={`px-2 py-1 text-xs ${viewportSize === 'mobile' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+                onClick={() => setViewportSize("mobile")}
+              >
+                Mobile
+              </button>
+              <button 
+                className={`px-2 py-1 text-xs ${viewportSize === 'tablet' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+                onClick={() => setViewportSize("tablet")}
+              >
+                Tablet
+              </button>
+              <button 
+                className={`px-2 py-1 text-xs ${viewportSize === 'desktop' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+                onClick={() => setViewportSize("desktop")}
+              >
+                Desktop
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center">
+            <select 
+              className="text-sm border rounded px-2 py-1"
+              value={currentPage.id}
+              onChange={(e) => handlePageChange(e.target.value)}
+            >
+              {website.pages.map((page: Page) => (
+                <option key={page.id} value={page.id}>
+                  {page.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+      
+      <div className={`${!slug ? 'mt-12' : ''} transition-all duration-300`}>
+        <div className={viewportClass()}>
+          {/* Navigation */}
+          {slug && website.pages.length > 1 && (
+            <nav className="bg-white shadow-sm p-4">
+              <div className="container mx-auto flex flex-wrap items-center justify-between">
+                <div className="text-lg font-bold">{website.websiteName}</div>
+                <div className="flex space-x-4">
+                  {website.pages.map((page: Page) => (
                     <button
-                      onClick={() => handleNavigate(page.id)}
-                      className={cn(
-                        "px-1 py-2 text-sm transition-all",
-                        currentPage?.id === page.id 
-                          ? 'text-blue-600 border-b-2 border-blue-600' 
-                          : 'text-gray-600 hover:text-gray-900'
-                      )}
+                      key={page.id}
+                      onClick={() => handlePageChange(page.id)}
+                      className={`px-3 py-1 rounded ${page.id === currentPage.id ? 'bg-gray-100' : ''}`}
                     >
                       {page.name}
                     </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex border rounded-md overflow-hidden">
-                <Button 
-                  variant={viewportSize === "mobile" ? "default" : "ghost"} 
-                  size="sm" 
-                  className="rounded-none px-2" 
-                  onClick={() => setViewportSize("mobile")}
-                >
-                  <Smartphone className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant={viewportSize === "tablet" ? "default" : "ghost"} 
-                  size="sm" 
-                  className="rounded-none px-2" 
-                  onClick={() => setViewportSize("tablet")}
-                >
-                  <Tablet className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant={viewportSize === "desktop" ? "default" : "ghost"} 
-                  size="sm" 
-                  className="rounded-none px-2" 
-                  onClick={() => setViewportSize("desktop")}
-                >
-                  <Monitor className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="block md:hidden">
-                <select 
-                  className="border rounded px-2 py-1 text-sm"
-                  value={currentPage?.id || ''}
-                  onChange={(e) => handleNavigate(e.target.value)}
-                >
-                  {pages.map((page) => (
-                    <option key={page.id} value={page.id}>
-                      {page.name}
-                    </option>
                   ))}
-                </select>
+                </div>
               </div>
-
-              <Button onClick={handleEdit} className="transition-colors">
-                {isTemplate ? 'Use This Template' : (
-                  <>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit Website
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      <main className="flex-1 bg-white animate-fade-in flex justify-center py-6">
-        <div className={cn(
-          "transition-all duration-300", 
-          viewportClass,
-          viewportSize !== "desktop" && "border shadow-sm rounded-lg overflow-hidden"
-        )}>
-          <div className="container mx-auto px-4">
-            {currentPage?.components && currentPage.components.length > 0 ? (
-              currentPage.components.map((component) => (
-                <React.Suspense
-                  key={component.id}
-                  fallback={<Skeleton className="h-24 w-full rounded-md mb-4" />}
-                >
-                  <DraggableComponent key={component.id} component={component} />
-                </React.Suspense>
-              ))
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-gray-500">
-                  {isTemplate 
-                    ? "This is a template page. You can customize it after selecting this template."
-                    : "This page has no content yet."}
-                </p>
-                <Button variant="outline" className="mt-4" onClick={handleEdit}>
-                  {isTemplate ? 'Use This Template' : (
-                    <>
-                      <Edit className="h-4 w-4 mr-1" />
-                      Add Content
-                    </>
-                  )}
-                </Button>
+            </nav>
+          )}
+          
+          {/* Page Content */}
+          <main className={slug ? 'min-h-screen' : ''}>
+            {currentPage.components && currentPage.components.map((component: any) => (
+              <DraggableComponent 
+                key={component.id} 
+                component={component} 
+                preview={true} 
+              />
+            ))}
+            
+            {(!currentPage.components || currentPage.components.length === 0) && (
+              <div className="p-8 text-center text-gray-500">
+                <p>This page has no content yet.</p>
               </div>
             )}
-          </div>
+          </main>
+          
+          {/* Footer */}
+          {slug && (
+            <footer className="bg-gray-100 p-4 text-center text-sm text-gray-500">
+              <p>Created with Website Builder</p>
+            </footer>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 };
 
