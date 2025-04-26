@@ -136,3 +136,86 @@ export const applyShimmerEffect = (element: HTMLElement) => {
   
   return removeShimmer;
 };
+
+// Add smooth fade-in animation to elements
+export const fadeInElement = (element: HTMLElement, delay: number = 0) => {
+  element.style.opacity = '0';
+  element.style.transform = 'translateY(10px)';
+  element.style.transition = `opacity 0.3s ease, transform 0.3s ease`;
+  
+  if (delay > 0) {
+    setTimeout(() => {
+      element.style.opacity = '1';
+      element.style.transform = 'translateY(0)';
+    }, delay);
+  } else {
+    // Use requestAnimationFrame for next frame to ensure CSS transition works
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+      });
+    });
+  }
+};
+
+// Add smooth scale animation to elements
+export const scaleElement = (element: HTMLElement, startScale: number = 0.95, endScale: number = 1, duration: number = 300) => {
+  element.style.transform = `scale(${startScale})`;
+  element.style.opacity = '0';
+  element.style.transition = `transform ${duration}ms ease-out, opacity ${duration}ms ease-out`;
+  
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      element.style.transform = `scale(${endScale})`;
+      element.style.opacity = '1';
+    });
+  });
+};
+
+// Optimize drag start with better ghost element creation
+export const createDragGhost = (element: HTMLElement) => {
+  const rect = element.getBoundingClientRect();
+  const ghost = element.cloneNode(true) as HTMLElement;
+  
+  // Style the ghost element
+  ghost.style.position = 'absolute';
+  ghost.style.top = '0';
+  ghost.style.left = '0';
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.height = `${rect.height}px`;
+  ghost.style.opacity = '0.6';
+  ghost.style.pointerEvents = 'none';
+  ghost.style.zIndex = '9999';
+  ghost.style.transform = 'scale(0.6)';
+  ghost.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+  ghost.style.transition = 'transform 0.1s ease';
+  
+  // Add to document body
+  document.body.appendChild(ghost);
+  
+  // Return function to remove ghost
+  return {
+    ghost,
+    rect,
+    remove: () => {
+      if (ghost.parentNode) {
+        ghost.parentNode.removeChild(ghost);
+      }
+    }
+  };
+};
+
+// Debounce function to limit function calls
+export const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return (...args: Parameters<F>): ReturnType<F> | void => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    
+    timeout = setTimeout(() => func(...args), waitFor);
+    return undefined;
+  };
+};

@@ -1,98 +1,59 @@
 
-# Website Builder Platform
+# Website Builder
 
-A full-featured website builder platform where users can create and publish websites from pre-built templates.
+An intuitive website builder that allows users to create, customize, and publish websites with a drag-and-drop interface.
 
 ## Features
 
-- Choose from built-in website templates:
-  - Education Website (Home, About Us, Courses, Admissions, Faculty, Contact)
-  - Portfolio Website (Home, Projects, About, Resume, Blog, Contact)
-  - E-commerce Website (Home, Shop, Products, Categories, Cart, Checkout, FAQ, About, Contact)
-  - Appointment Booking Website (Home, Services, Book Now, Our Team, Testimonials, About, Contact)
-- Edit and customize all content, design, and structure with an intuitive interface
-- Manage multiple pages per website with easy navigation
-- Preview websites in real-time with responsive design checks
-- Publish websites directly from the platform
-- User authentication with Supabase
-- Database and storage with Supabase for saving websites, user data, and assets
+- Drag and drop interface for easy website building
+- Pre-built components and templates
+- Multi-page website support
+- Real-time preview in different device sizes (mobile, tablet, desktop)
+- Responsive design for all screen sizes
+- Auto-save functionality
+- Publishing capabilities
+- Undo/redo functionality
+- Custom styling options
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (v16 or higher)
-- npm or bun
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <your-repository-url>
-cd website-builder
-```
-
+1. Clone the repository
 2. Install dependencies:
-```bash
-npm install
-# or
-bun install
-```
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm run dev
+   ```
 
-3. Set up environment variables:
-Copy the `.env.local.example` file to create a `.env.local` file in the root directory:
+## Usage
 
-```bash
-cp .env.local.example .env.local
-```
+1. Open the app and start a new project or choose from a template
+2. Drag components from the sidebar onto the canvas
+3. Customize components using the properties panel
+4. Add multiple pages to your website
+5. Preview your website in different device sizes
+6. Publish your website with one click
 
-Update the values in `.env.local` with your Supabase project information:
-```
-VITE_SUPABASE_URL=your-supabase-url
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-VITE_APP_NAME=Website Builder
-VITE_APP_URL=http://localhost:5173
-```
+## Technologies Used
 
-4. Run the development server:
-```bash
-npm run dev
-# or
-bun dev
-```
+- React with TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui components
+- React Router
+- React Query
+- Supabase (for authentication and data storage)
 
-5. Open [http://localhost:5173](http://localhost:5173) in your browser to see the application.
+## Project Structure
 
-## Supabase Setup
-
-1. Create a Supabase project at [https://supabase.com/](https://supabase.com/)
-2. Once your project is created, go to the project settings to find your project URL and anon key
-3. Update your `.env.local` file with your Supabase project URL and anon key
-4. In the Supabase dashboard, go to Authentication > Settings:
-   - Set your site URL to http://localhost:5173 (for development)
-   - Add http://localhost:5173/* to the redirect URLs
-   - Disable email confirmations for easier testing (optional)
-5. Create the following tables in your Supabase database:
-   - `websites`: To store user websites
-   - `pages`: To store pages for each website
-   - `assets`: To store uploaded assets
-6. Set up storage buckets for user assets:
-   - Create a bucket named "assets" for website assets
-   - Set appropriate CORS and security policies
-
-## Production Deployment
-
-The project is ready to be deployed to platforms like Vercel:
-
-1. Connect your Git repository to Vercel
-2. Add the environment variables from your `.env.local` file to Vercel
-3. Deploy the application
-
-For production:
-- Update the site URL and redirect URLs in Supabase to your production domain
-- Enable email confirmations for better security
+- `/src/components` - UI components
+- `/src/pages` - Page components
+- `/src/context` - React context providers
+- `/src/lib` - Utility functions and helpers
+- `/src/integrations` - Third-party integrations
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
+MIT
