@@ -1,12 +1,14 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Page } from '@/lib/pageData';
 import { useAuth } from '@/context/AuthContext';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Home, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit, Home, Loader2, Smartphone, Tablet, Monitor } from 'lucide-react';
 import { defaultTemplates } from '@/lib/templateData';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Preview = () => {
   const [pages, setPages] = useState<Page[]>([]);
@@ -14,6 +16,7 @@ const Preview = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isTemplate, setIsTemplate] = useState(false);
   const [websiteName, setWebsiteName] = useState<string>("My Website");
+  const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const { pageId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -169,9 +172,21 @@ const Preview = () => {
     );
   }
   
+  // Get viewport class based on selected size
+  const viewportClass = (() => {
+    switch (viewportSize) {
+      case 'mobile':
+        return 'max-w-[375px]';
+      case 'tablet':
+        return 'max-w-[768px]';
+      default:
+        return 'max-w-full';
+    }
+  })();
+  
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10 animate-fade-in">
+      <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-10 animate-fade-in">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -204,55 +219,95 @@ const Preview = () => {
               </ul>
             </nav>
             
-            <div className="block md:hidden">
-              <select 
-                className="border rounded px-2 py-1 text-sm"
-                value={currentPage?.id || ''}
-                onChange={(e) => handleNavigate(e.target.value)}
-              >
-                {pages.map((page) => (
-                  <option key={page.id} value={page.id}>
-                    {page.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex border rounded-md overflow-hidden">
+                <Button 
+                  variant={viewportSize === "mobile" ? "default" : "ghost"} 
+                  size="sm" 
+                  className="rounded-none px-2" 
+                  onClick={() => setViewportSize("mobile")}
+                >
+                  <Smartphone className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={viewportSize === "tablet" ? "default" : "ghost"} 
+                  size="sm" 
+                  className="rounded-none px-2" 
+                  onClick={() => setViewportSize("tablet")}
+                >
+                  <Tablet className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={viewportSize === "desktop" ? "default" : "ghost"} 
+                  size="sm" 
+                  className="rounded-none px-2" 
+                  onClick={() => setViewportSize("desktop")}
+                >
+                  <Monitor className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="block md:hidden">
+                <select 
+                  className="border rounded px-2 py-1 text-sm"
+                  value={currentPage?.id || ''}
+                  onChange={(e) => handleNavigate(e.target.value)}
+                >
+                  {pages.map((page) => (
+                    <option key={page.id} value={page.id}>
+                      {page.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <Button onClick={handleEdit} className="transition-colors">
-              {isTemplate ? 'Use This Template' : (
-                <>
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit Website
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </header>
-      
-      <main className="flex-1 bg-white animate-fade-in">
-        <div className="container mx-auto px-4 py-8">
-          {currentPage?.components && currentPage.components.length > 0 ? (
-            currentPage.components.map((component) => (
-              <DraggableComponent key={component.id} component={component} />
-            ))
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-gray-500">
-                {isTemplate 
-                  ? "This is a template page. You can customize it after selecting this template."
-                  : "This page has no content yet."}
-              </p>
-              <Button variant="outline" className="mt-4" onClick={handleEdit}>
+              <Button onClick={handleEdit} className="transition-colors">
                 {isTemplate ? 'Use This Template' : (
                   <>
                     <Edit className="h-4 w-4 mr-1" />
-                    Add Content
+                    Edit Website
                   </>
                 )}
               </Button>
             </div>
-          )}
+          </div>
+        </div>
+      </header>
+      
+      <main className="flex-1 bg-white animate-fade-in flex justify-center py-6">
+        <div className={cn(
+          "transition-all duration-300", 
+          viewportClass,
+          viewportSize !== "desktop" && "border shadow-sm rounded-lg overflow-hidden"
+        )}>
+          <div className="container mx-auto px-4">
+            {currentPage?.components && currentPage.components.length > 0 ? (
+              currentPage.components.map((component) => (
+                <React.Suspense
+                  key={component.id}
+                  fallback={<Skeleton className="h-24 w-full rounded-md mb-4" />}
+                >
+                  <DraggableComponent key={component.id} component={component} />
+                </React.Suspense>
+              ))
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-gray-500">
+                  {isTemplate 
+                    ? "This is a template page. You can customize it after selecting this template."
+                    : "This page has no content yet."}
+                </p>
+                <Button variant="outline" className="mt-4" onClick={handleEdit}>
+                  {isTemplate ? 'Use This Template' : (
+                    <>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Add Content
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

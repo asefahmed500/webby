@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,47 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Shimmer effect for loading states */
+  .animate-shimmer {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  /* Spring animation for components */
+  .animate-spring {
+    animation: spring 0.5s ease-out;
+  }
+
+  @keyframes spring {
+    0% {
+      transform: scale(0.95);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
+  }
+  
+  .dark .glass {
+    @apply bg-gray-900/70 border-gray-700/30;
   }
 }

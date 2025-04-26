@@ -1,7 +1,9 @@
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { useBuilder, Component } from "@/context/BuilderContext";
 import { cn } from "@/lib/utils";
+import { calculateGuidelines, springAnimate, applyShimmerEffect } from "@/lib/animationUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DraggableComponentProps {
   component: Component;
@@ -17,14 +19,69 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     setSelectedComponent, 
     isDragging,
     addComponent,
-    previewMode
+    previewMode,
+    removeComponent,
+    updateComponent
   } = useBuilder();
   
   const isSelected = selectedComponent?.id === component.id;
+  const componentRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [guidelines, setGuidelines] = useState<{ position: number; type: 'horizontal' | 'vertical'; strength: number; }[]>([]);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [isDraggingSelf, setIsDraggingSelf] = useState(false);
 
   // Use memoization to prevent unnecessary re-renders
   const memoizedChildren = useMemo(() => component.children, [component.children]);
   const memoizedStyles = useMemo(() => component.styles, [component.styles]);
+
+  // Handle keyboard shortcuts for selected component
+  useEffect(() => {
+    if (!isSelected || previewMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle delete
+      if ((e.key === 'Delete' || e.key === 'Backspace') && isSelected) {
+        e.preventDefault();
+        removeComponent(component.id);
+      }
+      
+      // Handle arrow keys for nudging elements
+      if (isSelected && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        
+        const delta = e.shiftKey ? 10 : 1;
+        const currentStyles = {...component.styles};
+        
+        // Calculate position changes
+        if (e.key === 'ArrowUp') {
+          currentStyles.marginTop = `${parseInt(currentStyles.marginTop || '0') - delta}px`;
+        } else if (e.key === 'ArrowDown') {
+          currentStyles.marginTop = `${parseInt(currentStyles.marginTop || '0') + delta}px`;
+        } else if (e.key === 'ArrowLeft') {
+          currentStyles.marginLeft = `${parseInt(currentStyles.marginLeft || '0') - delta}px`;
+        } else if (e.key === 'ArrowRight') {
+          currentStyles.marginLeft = `${parseInt(currentStyles.marginLeft || '0') + delta}px`;
+        }
+        
+        updateComponent(component.id, { styles: currentStyles });
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSelected, component.id, previewMode, removeComponent, updateComponent, component.styles]);
+
+  // Apply shimmer effect when component is loading
+  useEffect(() => {
+    if (isLoading && componentRef.current) {
+      const removeShimmer = applyShimmerEffect(componentRef.current);
+      return () => removeShimmer();
+    }
+  }, [isLoading]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -33,11 +90,40 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-  }, []);
+    
+    if (previewMode) return;
+    
+    // Show guidelines when dragging over component
+    if (componentRef.current && e.dataTransfer.types.includes('componentType')) {
+      const elementRect = componentRef.current.getBoundingClientRect();
+      const newGuidelines = calculateGuidelines([], elementRect);
+      setGuidelines(newGuidelines);
+    }
+  }, [previewMode]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (previewMode) return;
+    
+    componentRef.current?.classList.add('ring-2', 'ring-blue-400', 'ring-opacity-70');
+  }, [previewMode]);
+  
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (previewMode) return;
+    
+    componentRef.current?.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-70');
+    setGuidelines([]);
+  }, [previewMode]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (previewMode) return;
+    
+    setGuidelines([]);
+    componentRef.current?.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-70');
     
     const componentType = e.dataTransfer.getData("componentType");
     if (componentType && componentType.startsWith("template:")) {
@@ -46,11 +132,80 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     }
     
     if (componentType && (component.type === "container" || component.type === "card" || component.type === "navigation" || component.type === "footer" || component.type === "form" || component.type === "testimonial")) {
-      addComponent(componentType, component.id);
+      setIsLoading(true);
+      
+      // Add component with a slight delay for visual feedback
+      setTimeout(() => {
+        addComponent(componentType, component.id);
+        setIsLoading(false);
+      }, 300);
     }
-  }, [component, addComponent]);
+  }, [component, addComponent, previewMode]);
+
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    if (previewMode) {
+      e.preventDefault();
+      return;
+    }
+    
+    setIsDraggingSelf(true);
+    
+    // Set drag image (show a small preview)
+    if (componentRef.current) {
+      // Create ghost image with reduced opacity
+      const rect = componentRef.current.getBoundingClientRect();
+      const ghostElement = componentRef.current.cloneNode(true) as HTMLDivElement;
+      
+      ghostElement.style.position = 'absolute';
+      ghostElement.style.top = '0';
+      ghostElement.style.left = '0';
+      ghostElement.style.width = `${rect.width}px`;
+      ghostElement.style.height = `${rect.height}px`;
+      ghostElement.style.opacity = '0.6';
+      ghostElement.style.pointerEvents = 'none';
+      ghostElement.style.zIndex = '9999';
+      ghostElement.style.transform = 'scale(0.5)';
+      
+      document.body.appendChild(ghostElement);
+      e.dataTransfer.setDragImage(ghostElement, rect.width / 4, rect.height / 4);
+      
+      // Capture starting position
+      const initialX = e.clientX;
+      const initialY = e.clientY;
+      setDragStartPos({ x: initialX, y: initialY });
+      
+      // Clean up ghost element after drag
+      setTimeout(() => {
+        document.body.removeChild(ghostElement);
+      }, 0);
+    }
+    
+    e.dataTransfer.setData('text/plain', component.id);
+    e.dataTransfer.effectAllowed = 'move';
+  }, [component.id, previewMode]);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    if (previewMode) return;
+    
+    setIsDraggingSelf(false);
+    setGuidelines([]);
+    
+    // Apply spring animation when dropping the element
+    if (componentRef.current) {
+      const endX = e.clientX - dragStartPos.x;
+      const endY = e.clientY - dragStartPos.y;
+      
+      if (Math.abs(endX) > 5 || Math.abs(endY) > 5) {
+        springAnimate(componentRef.current, { x: 0, y: 0 }, { x: 0, y: 0 }, 300);
+      }
+    }
+  }, [dragStartPos, previewMode]);
 
   const renderComponentContent = () => {
+    if (isLoading) {
+      return <Skeleton className="w-full h-20" />;
+    }
+    
     switch (component.type) {
       case "container":
       case "card":
@@ -92,6 +247,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
             style={memoizedStyles}
             className="transition-all" 
             loading="lazy"
+            onLoad={() => setIsLoading(false)}
           />
         );
       case "button":
@@ -149,14 +305,16 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   const selectionClasses = useMemo(() => {
     if (previewMode) return "";
     return cn(
-      "transition-all",
+      "transition-all duration-200",
       isSelected && "outline outline-2 outline-blue-500",
-      isDragging && "opacity-50"
+      isDragging && "opacity-50",
+      isDraggingSelf && "opacity-70 shadow-lg"
     );
-  }, [previewMode, isSelected, isDragging]);
+  }, [previewMode, isSelected, isDragging, isDraggingSelf]);
 
   return (
     <div
+      ref={componentRef}
       className={cn(
         "relative",
         selectionClasses,
@@ -164,9 +322,31 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       )}
       onClick={!previewMode ? handleClick : undefined}
       onDragOver={!previewMode ? handleDragOver : undefined}
+      onDragEnter={!previewMode ? handleDragEnter : undefined}
+      onDragLeave={!previewMode ? handleDragLeave : undefined}
       onDrop={!previewMode ? handleDrop : undefined}
+      onDragStart={!previewMode ? handleDragStart : undefined}
+      onDragEnd={!previewMode ? handleDragEnd : undefined}
+      draggable={!previewMode}
+      data-component-id={component.id}
     >
       {renderComponentContent()}
+      
+      {/* Guidelines */}
+      {guidelines.map((guide, index) => (
+        <div 
+          key={`${guide.type}-${index}`}
+          className={cn(
+            "absolute pointer-events-none",
+            guide.type === 'horizontal' ? 'left-0 right-0 h-px' : 'top-0 bottom-0 w-px',
+            'bg-blue-500 z-50'
+          )}
+          style={{
+            [guide.type === 'horizontal' ? 'top' : 'left']: `${guide.position}px`,
+            opacity: guide.strength * 0.8
+          }}
+        />
+      ))}
     </div>
   );
 };

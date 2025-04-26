@@ -1,8 +1,8 @@
-
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo, useRef } from "react";
 import { defaultPages, Page } from "@/lib/pageData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 export interface Component {
   id: string;
@@ -46,6 +46,14 @@ interface BuilderContextType {
   websiteName: string;
   setWebsiteName: React.Dispatch<React.SetStateAction<string>>;
   saveWebsite: () => Promise<void>;
+  undoChange: () => void;
+  redoChange: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  lastSaved: Date | null;
+  isSaving: boolean;
+  viewportSize: "desktop" | "tablet" | "mobile";
+  setViewportSize: React.Dispatch<React.SetStateAction<"desktop" | "tablet" | "mobile">>;
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -57,6 +65,14 @@ export const useBuilder = () => {
   }
   return context;
 };
+
+interface HistoryState {
+  pages: Page[];
+  currentPageId: string;
+  components: Component[];
+}
+
+const MAX_HISTORY_STATES = 50;
 
 export const BuilderProvider: React.FC<{ children: ReactNode }> = ({ 
   children 
@@ -74,13 +90,99 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
+
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
-  // Use a debounced state update for smoother component updates
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   const [updateTimeout, setUpdateTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
 
-  // Initial load from localStorage
+  useEffect(() => {
+    if (initialLoadDone) {
+      const initialState: HistoryState = {
+        pages,
+        currentPageId,
+        components
+      };
+      setHistory([initialState]);
+      setHistoryIndex(0);
+    }
+  }, [initialLoadDone]);
+
+  useEffect(() => {
+    setCanUndo(historyIndex > 0);
+    setCanRedo(historyIndex < history.length - 1);
+  }, [history, historyIndex]);
+
+  const undoChange = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      const previousState = history[newIndex];
+      
+      setPages(previousState.pages);
+      setCurrentPageId(previousState.currentPageId);
+      setComponents(previousState.components);
+      setHistoryIndex(newIndex);
+    }
+  }, [history, historyIndex]);
+
+  const redoChange = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      const nextState = history[newIndex];
+      
+      setPages(nextState.pages);
+      setCurrentPageId(nextState.currentPageId);
+      setComponents(nextState.components);
+      setHistoryIndex(newIndex);
+    }
+  }, [history, historyIndex]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        undoChange();
+      } else if (
+        (e.key === 'y' && (e.ctrlKey || e.metaKey)) || 
+        (e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)
+      ) {
+        e.preventDefault();
+        redoChange();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [undoChange, redoChange]);
+
+  const addToHistory = useCallback((state: HistoryState) => {
+    setHistory(prevHistory => {
+      const newHistory = prevHistory.slice(0, historyIndex + 1);
+      const updatedHistory = [...newHistory, state];
+      if (updatedHistory.length > MAX_HISTORY_STATES) {
+        return updatedHistory.slice(updatedHistory.length - MAX_HISTORY_STATES);
+      }
+      return updatedHistory;
+    });
+    
+    setHistoryIndex(prevIndex => {
+      const newIndex = Math.min(prevIndex + 1, MAX_HISTORY_STATES - 1);
+      return newIndex;
+    });
+  }, [historyIndex]);
+
   useEffect(() => {
     try {
       const savedData = localStorage.getItem("saved-website");
@@ -107,7 +209,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
           if (parsedData.currentPageId) {
             setCurrentPageId(parsedData.currentPageId);
           } else {
-            // Find home page or use first page
             const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
             if (homePage) {
               setCurrentPageId(homePage.id);
@@ -115,7 +216,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
           }
         }
       } else if (publishedData) {
-        // If no saved data but there's published data, use that
         const parsedData = JSON.parse(publishedData);
         if (parsedData.pages) {
           console.log("No saved data, using published data");
@@ -138,13 +238,13 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       }
       
       setInitialLoadDone(true);
+      setLastSaved(new Date());
     } catch (error) {
       console.error("Error loading saved website:", error);
       setInitialLoadDone(true);
     }
   }, []);
 
-  // Check for published status
   useEffect(() => {
     if (!initialLoadDone) return;
     
@@ -161,7 +261,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [initialLoadDone]);
 
-  // Load components when changing pages - optimize with useMemo
   useEffect(() => {
     if (!initialLoadDone) return;
     
@@ -169,7 +268,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     if (currentPage) {
       console.log("Setting components from current page:", currentPage.id, currentPage.components?.length || 0);
       
-      // Use a deep copy to avoid reference issues
       const componentsCopy = currentPage.components ? 
         JSON.parse(JSON.stringify(currentPage.components)) : [];
         
@@ -178,7 +276,36 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [currentPageId, pages, initialLoadDone]);
 
-  // Save components when they change - use debounce for performance
+  useEffect(() => {
+    if (!initialLoadDone) return;
+    
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    
+    autoSaveTimerRef.current = setTimeout(() => {
+      if (initialLoadDone) {
+        console.log("Auto-saving website...");
+        setIsSaving(true);
+        
+        saveWebsite()
+          .then(() => {
+            setLastSaved(new Date());
+            setIsSaving(false);
+          })
+          .catch(() => {
+            setIsSaving(false);
+          });
+      }
+    }, 10000);
+    
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [components, pages, currentPageId, websiteName, initialLoadDone]);
+
   const updatePageComponents = useCallback(() => {
     if (!initialLoadDone) return;
     
@@ -187,16 +314,24 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
     
     const timeoutId = setTimeout(() => {
-      setPages(prevPages => 
-        prevPages.map(page => 
+      setPages(prevPages => {
+        const updatedPages = prevPages.map(page => 
           page.id === currentPageId ? { ...page, components } : page
-        )
-      );
-    }, 300); // 300ms debounce
+        );
+        
+        addToHistory({
+          pages: updatedPages,
+          currentPageId,
+          components
+        });
+        
+        return updatedPages;
+      });
+    }, 300);
     
     setUpdateTimeout(timeoutId as unknown as NodeJS.Timeout);
     
-  }, [components, currentPageId, initialLoadDone, updateTimeout]);
+  }, [components, currentPageId, initialLoadDone, updateTimeout, addToHistory]);
   
   useEffect(() => {
     if (!initialLoadDone) return;
@@ -211,7 +346,8 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
 
   const saveWebsite = async () => {
     try {
-      // Update the current page with the latest components first
+      setIsSaving(true);
+      
       const updatedPages = pages.map(page => 
         page.id === currentPageId ? { ...page, components } : page
       );
@@ -234,15 +370,17 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       }
       
       setPages(updatedPages);
+      setLastSaved(new Date());
+      setIsSaving(false);
       
       return Promise.resolve();
     } catch (error) {
       console.error("Error saving website:", error);
+      setIsSaving(false);
       return Promise.reject(error);
     }
   };
 
-  // Optimized component operations with deep cloning to prevent state reference issues
   const addComponent = useCallback((type: string, targetId?: string) => {
     const newComponent: Component = {
       id: generateId(),
@@ -253,11 +391,13 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     if (!targetId) {
-      setComponents(prev => [...prev, newComponent]);
+      setComponents(prev => {
+        const updatedComponents = [...prev, newComponent];
+        return updatedComponents;
+      });
       return;
     }
 
-    // Add as a child of the target component using deep copy to avoid reference issues
     const updatedComponents = JSON.parse(JSON.stringify(components));
     
     const addToChildren = (items: Component[]) => {
@@ -281,7 +421,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     setComponents(addToChildren(updatedComponents));
   }, [components]);
 
-  // Optimized update component without unnecessary re-renders
   const updateComponent = useCallback((id: string, updates: Partial<Component>) => {
     const updateComponentRecursive = (components: Component[]): Component[] => {
       return components.map(component => {
@@ -321,7 +460,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [components, selectedComponent]);
   
-  // Add a new page with optimized handling
   const addPage = useCallback((name: string) => {
     const id = name.toLowerCase().replace(/\s+/g, '-');
     const path = id === 'home' ? '/' : `/${id}`;
@@ -334,7 +472,6 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       isHome: false
     };
     
-    // Save current page components before switching
     const updatedPages = pages.map(page => 
       page.id === currentPageId ? { ...page, components } : page
     );
@@ -343,24 +480,48 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     setCurrentPageId(id);
     setComponents([]);
     setSelectedComponent(null);
-  }, [pages, components, currentPageId]);
+    
+    addToHistory({
+      pages: [...updatedPages, newPage],
+      currentPageId: id,
+      components: []
+    });
+    
+    toast.success(`Page "${name}" created`);
+  }, [pages, components, currentPageId, addToHistory]);
   
-  // Remove a page with optimized handling
   const removePage = useCallback((id: string) => {
-    // Don't remove the last page
-    if (pages.length <= 1) return;
+    if (pages.length <= 1) {
+      toast.error("Cannot delete the only page");
+      return;
+    }
     
     const updatedPages = pages.filter(page => page.id !== id);
     setPages(updatedPages);
     
-    // If the current page is being removed, switch to the first available page
     if (currentPageId === id) {
-      setCurrentPageId(updatedPages[0].id);
-      setComponents(updatedPages[0].components || []);
+      const newCurrentId = updatedPages[0].id;
+      setCurrentPageId(newCurrentId);
+      
+      const newCurrentPage = updatedPages[0];
+      setComponents(newCurrentPage.components || []);
+      
+      addToHistory({
+        pages: updatedPages,
+        currentPageId: newCurrentId,
+        components: newCurrentPage.components || []
+      });
+    } else {
+      addToHistory({
+        pages: updatedPages,
+        currentPageId,
+        components
+      });
     }
-  }, [pages, currentPageId]);
+    
+    toast.success("Page deleted");
+  }, [pages, currentPageId, components, addToHistory]);
 
-  // Memoized context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     components,
     setComponents,
@@ -387,12 +548,21 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     setWebsiteId,
     websiteName,
     setWebsiteName,
-    saveWebsite
+    saveWebsite,
+    undoChange,
+    redoChange,
+    canUndo,
+    canRedo,
+    lastSaved,
+    isSaving,
+    viewportSize,
+    setViewportSize
   }), [
     components, selectedComponent, isDragging, draggedComponent, 
     previewMode, pages, currentPageId, publishStatus, websiteId, 
     websiteName, addComponent, updateComponent, removeComponent,
-    addPage, removePage, saveWebsite
+    addPage, removePage, saveWebsite, undoChange, redoChange,
+    canUndo, canRedo, lastSaved, isSaving, viewportSize
   ]);
 
   return (
