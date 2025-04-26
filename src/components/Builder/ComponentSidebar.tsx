@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useBuilder } from "@/context/BuilderContext";
 import { componentTypes, templates } from "@/lib/componentData";
 import { cn } from "@/lib/utils";

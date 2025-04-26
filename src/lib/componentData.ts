@@ -1,22 +1,21 @@
-
 import { Component } from "@/context/BuilderContext";
 import { Template } from "@/context/BuilderContext";
 
 // Define all available component types
 export const componentTypes = [
-  { type: "text", label: "Text" },
-  { type: "heading", label: "Heading" },
-  { type: "button", label: "Button" },
-  { type: "image", label: "Image" },
-  { type: "container", label: "Container" },
-  { type: "card", label: "Card" },
-  { type: "navigation", label: "Navigation" },
-  { type: "footer", label: "Footer" },
-  { type: "divider", label: "Divider" },
-  { type: "input", label: "Input" },
-  { type: "form", label: "Form" },
-  { type: "testimonial", label: "Testimonial" },
-  { type: "pricing", label: "Pricing Table" }
+  { type: "text", label: "Text", icon: "text" },
+  { type: "heading", label: "Heading", icon: "heading-1" },
+  { type: "button", label: "Button", icon: "square" },
+  { type: "image", label: "Image", icon: "image" },
+  { type: "container", label: "Container", icon: "panel-right" },
+  { type: "card", label: "Card", icon: "square" },
+  { type: "navigation", label: "Navigation", icon: "menu" },
+  { type: "footer", label: "Footer", icon: "panel-bottom" },
+  { type: "divider", label: "Divider", icon: "minus" },
+  { type: "input", label: "Input", icon: "form-input" },
+  { type: "form", label: "Form", icon: "file-text" },
+  { type: "testimonial", label: "Testimonial", icon: "quote" },
+  { type: "pricing", label: "Pricing Table", icon: "badge-dollar-sign" }
 ];
 
 // Create some prebuilt template components
@@ -808,31 +807,31 @@ export const templates: Template[] = [
   {
     id: "hero-section",
     name: "Hero Section",
-    thumbnail: "hero-image.jpg",
+    thumbnail: "layout-dashboard",
     components: heroSection
   },
   {
     id: "features-section",
     name: "Features Section",
-    thumbnail: "features-image.jpg",
+    thumbnail: "layout-list",
     components: featuresSection
   },
   {
     id: "testimonial-section",
     name: "Testimonials",
-    thumbnail: "testimonial-image.jpg",
+    thumbnail: "quote",
     components: testimonialSection
   },
   {
     id: "pricing-section",
     name: "Pricing Table",
-    thumbnail: "pricing-image.jpg",
+    thumbnail: "badge-dollar-sign",
     components: pricingSection
   },
   {
     id: "contact-section",
     name: "Contact Form",
-    thumbnail: "contact-image.jpg",
+    thumbnail: "mail",
     components: contactSection
   }
 ];
