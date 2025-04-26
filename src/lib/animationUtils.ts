@@ -1,221 +1,171 @@
 
-// Animation and guide utilities for the builder
+import { Component } from "@/context/BuilderContext";
 
-interface Position {
-  x: number;
-  y: number;
+// Function to debounce function calls
+export function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  return function(...args: Parameters<F>): Promise<ReturnType<F>> {
+    return new Promise(resolve => {
+      if (timeout !== null) {
+        clearTimeout(timeout);
+      }
+      
+      timeout = setTimeout(() => {
+        resolve(func(...args));
+      }, waitFor);
+    });
+  };
 }
 
-interface GuidelineData {
-  position: number;
-  type: 'horizontal' | 'vertical';
-  strength: number;
+// Apply spring animation to an element
+export function springAnimate(
+  element: HTMLElement, 
+  startPos: { x: number, y: number }, 
+  endPos: { x: number, y: number }, 
+  duration: number = 300
+) {
+  // Cancel any existing animations
+  element.getAnimations().forEach(animation => animation.cancel());
+  
+  const animation = element.animate(
+    [
+      { transform: `translate(${startPos.x}px, ${startPos.y}px)` },
+      { transform: `translate(${endPos.x}px, ${endPos.y}px)` }
+    ],
+    {
+      duration,
+      easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', // Spring-like easing
+      fill: 'forwards'
+    }
+  );
+  
+  return new Promise<void>(resolve => {
+    animation.onfinish = () => resolve();
+  });
 }
 
-// Calculate snapping guidelines based on existing components
-export const calculateGuidelines = (
-  components: any[], 
-  elementRect: DOMRect, 
+// Calculate guidelines for snapping elements
+export function calculateGuidelines(
+  existingElements: DOMRect[],
+  currentElement: DOMRect,
   threshold: number = 10
-): GuidelineData[] => {
-  const guidelines: GuidelineData[] = [];
+): { position: number; type: 'horizontal' | 'vertical'; strength: number; }[] {
+  const guidelines: { position: number; type: 'horizontal' | 'vertical'; strength: number; }[] = [];
   
-  // Get all component DOM elements in the canvas
-  const componentElements = document.querySelectorAll('[data-component-id]');
+  // Horizontal center guideline
+  guidelines.push({ 
+    position: currentElement.height / 2, 
+    type: 'horizontal', 
+    strength: 1.0
+  });
   
-  componentElements.forEach((element) => {
-    const rect = element.getBoundingClientRect();
+  // Vertical center guideline
+  guidelines.push({ 
+    position: currentElement.width / 2, 
+    type: 'vertical', 
+    strength: 1.0
+  });
+  
+  // Add more guidelines based on existing elements
+  existingElements.forEach(element => {
+    // Calculate distances for horizontal guidelines
+    const topDistance = Math.abs(currentElement.top - element.top);
+    const bottomDistance = Math.abs(currentElement.bottom - element.bottom);
+    const centerYDistance = Math.abs((currentElement.top + currentElement.height / 2) - 
+                                    (element.top + element.height / 2));
     
-    // Skip the current element being dragged
-    if (elementRect.top === rect.top && elementRect.left === rect.left) {
-      return;
+    if (topDistance < threshold) {
+      guidelines.push({
+        position: element.top - currentElement.top,
+        type: 'horizontal',
+        strength: 1 - (topDistance / threshold)
+      });
     }
     
-    // Horizontal guidelines (top, center, bottom)
-    const horizontalPoints = [
-      { pos: rect.top, strength: 1 },
-      { pos: rect.top + rect.height / 2, strength: 0.8 },
-      { pos: rect.bottom, strength: 1 }
-    ];
-    
-    // Vertical guidelines (left, center, right)
-    const verticalPoints = [
-      { pos: rect.left, strength: 1 },
-      { pos: rect.left + rect.width / 2, strength: 0.8 },
-      { pos: rect.right, strength: 1 }
-    ];
-    
-    // Check element top/center/bottom against existing components
-    [elementRect.top, elementRect.top + elementRect.height / 2, elementRect.bottom].forEach((y) => {
-      horizontalPoints.forEach((point) => {
-        if (Math.abs(y - point.pos) < threshold) {
-          guidelines.push({
-            position: point.pos,
-            type: 'horizontal',
-            strength: point.strength
-          });
-        }
+    if (bottomDistance < threshold) {
+      guidelines.push({
+        position: element.bottom - currentElement.top,
+        type: 'horizontal',
+        strength: 1 - (bottomDistance / threshold)
       });
-    });
+    }
     
-    // Check element left/center/right against existing components
-    [elementRect.left, elementRect.left + elementRect.width / 2, elementRect.right].forEach((x) => {
-      verticalPoints.forEach((point) => {
-        if (Math.abs(x - point.pos) < threshold) {
-          guidelines.push({
-            position: point.pos,
-            type: 'vertical',
-            strength: point.strength
-          });
-        }
+    if (centerYDistance < threshold) {
+      guidelines.push({
+        position: (element.top + element.height / 2) - currentElement.top,
+        type: 'horizontal',
+        strength: 1 - (centerYDistance / threshold)
       });
-    });
+    }
+    
+    // Calculate distances for vertical guidelines
+    const leftDistance = Math.abs(currentElement.left - element.left);
+    const rightDistance = Math.abs(currentElement.right - element.right);
+    const centerXDistance = Math.abs((currentElement.left + currentElement.width / 2) - 
+                                    (element.left + element.width / 2));
+                                    
+    if (leftDistance < threshold) {
+      guidelines.push({
+        position: element.left - currentElement.left,
+        type: 'vertical',
+        strength: 1 - (leftDistance / threshold)
+      });
+    }
+    
+    if (rightDistance < threshold) {
+      guidelines.push({
+        position: element.right - currentElement.left,
+        type: 'vertical',
+        strength: 1 - (rightDistance / threshold)
+      });
+    }
+    
+    if (centerXDistance < threshold) {
+      guidelines.push({
+        position: (element.left + element.width / 2) - currentElement.left,
+        type: 'vertical',
+        strength: 1 - (centerXDistance / threshold)
+      });
+    }
   });
   
   return guidelines;
-};
+}
 
-// Animate an element with spring physics
-export const springAnimate = (
-  element: HTMLElement, 
-  startPos: Position,
-  endPos: Position,
-  duration: number = 300
-) => {
-  const startTime = performance.now();
-  const dampingRatio = 0.8; // 0 = oscillate forever, 1 = no oscillation
-  const angularFrequency = 12; // higher = faster oscillations
-  
-  const animate = (currentTime: number) => {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(1, elapsed / duration);
-    
-    // Spring physics for smooth animation
-    const springFactor = Math.exp(-dampingRatio * angularFrequency * progress) *
-      Math.cos(Math.sqrt(1 - dampingRatio * dampingRatio) * angularFrequency * progress);
-    
-    const currentX = endPos.x - (endPos.x - startPos.x) * springFactor;
-    const currentY = endPos.y - (endPos.y - startPos.y) * springFactor;
-    
-    element.style.transform = `translate(${currentX}px, ${currentY}px)`;
-    
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      element.style.transform = `translate(${endPos.x}px, ${endPos.y}px)`;
-    }
-  };
-  
-  requestAnimationFrame(animate);
-};
-
-// Generate a shimmer/skeleton loading effect
-export const applyShimmerEffect = (element: HTMLElement) => {
+// Apply shimmer effect for loading states
+export function applyShimmerEffect(element: HTMLElement) {
   // Add shimmer classes
-  element.classList.add('animate-shimmer', 'bg-gradient-to-r', 'from-gray-200', 'via-white', 'to-gray-200');
+  element.classList.add('animate-pulse', 'bg-gradient-to-r', 'from-gray-200', 'via-white', 'to-gray-200', 'bg-200%');
   
-  // Remove effect when content is loaded
-  const removeShimmer = () => {
-    element.classList.remove('animate-shimmer', 'bg-gradient-to-r', 'from-gray-200', 'via-white', 'to-gray-200');
+  // Return a cleanup function
+  return () => {
+    element.classList.remove('animate-pulse', 'bg-gradient-to-r', 'from-gray-200', 'via-white', 'to-gray-200', 'bg-200%');
   };
-  
-  // Remove shimmer after content loads or after a timeout
-  const img = element.querySelector('img');
-  if (img) {
-    if (img.complete) {
-      removeShimmer();
-    } else {
-      img.addEventListener('load', removeShimmer);
-      // Fallback if image fails to load
-      setTimeout(removeShimmer, 2000);
-    }
-  } else {
-    // For non-image elements, remove after a short delay
-    setTimeout(removeShimmer, 800);
+}
+
+// Generate optimized cloneDeep function for component trees
+export function cloneDeep<T extends object>(obj: T): T {
+  // For components, use optimized path
+  if ((obj as any).type && (obj as any).id) {
+    return JSON.parse(JSON.stringify(obj));
   }
   
-  return removeShimmer;
-};
-
-// Add smooth fade-in animation to elements
-export const fadeInElement = (element: HTMLElement, delay: number = 0) => {
-  element.style.opacity = '0';
-  element.style.transform = 'translateY(10px)';
-  element.style.transition = `opacity 0.3s ease, transform 0.3s ease`;
-  
-  if (delay > 0) {
-    setTimeout(() => {
-      element.style.opacity = '1';
-      element.style.transform = 'translateY(0)';
-    }, delay);
-  } else {
-    // Use requestAnimationFrame for next frame to ensure CSS transition works
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        element.style.opacity = '1';
-        element.style.transform = 'translateY(0)';
-      });
-    });
+  // For other objects, use recursive approach for better performance
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
   }
-};
-
-// Add smooth scale animation to elements
-export const scaleElement = (element: HTMLElement, startScale: number = 0.95, endScale: number = 1, duration: number = 300) => {
-  element.style.transform = `scale(${startScale})`;
-  element.style.opacity = '0';
-  element.style.transition = `transform ${duration}ms ease-out, opacity ${duration}ms ease-out`;
   
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      element.style.transform = `scale(${endScale})`;
-      element.style.opacity = '1';
-    });
+  if (Array.isArray(obj)) {
+    return obj.map(item => cloneDeep(item)) as unknown as T;
+  }
+  
+  const clone = {} as T;
+  
+  Object.keys(obj).forEach(key => {
+    const k = key as keyof T;
+    clone[k] = cloneDeep(obj[k]);
   });
-};
-
-// Optimize drag start with better ghost element creation
-export const createDragGhost = (element: HTMLElement) => {
-  const rect = element.getBoundingClientRect();
-  const ghost = element.cloneNode(true) as HTMLElement;
   
-  // Style the ghost element
-  ghost.style.position = 'absolute';
-  ghost.style.top = '0';
-  ghost.style.left = '0';
-  ghost.style.width = `${rect.width}px`;
-  ghost.style.height = `${rect.height}px`;
-  ghost.style.opacity = '0.6';
-  ghost.style.pointerEvents = 'none';
-  ghost.style.zIndex = '9999';
-  ghost.style.transform = 'scale(0.6)';
-  ghost.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-  ghost.style.transition = 'transform 0.1s ease';
-  
-  // Add to document body
-  document.body.appendChild(ghost);
-  
-  // Return function to remove ghost
-  return {
-    ghost,
-    rect,
-    remove: () => {
-      if (ghost.parentNode) {
-        ghost.parentNode.removeChild(ghost);
-      }
-    }
-  };
-};
-
-// Debounce function to limit function calls
-export const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  
-  return (...args: Parameters<F>): ReturnType<F> | void => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    
-    timeout = setTimeout(() => func(...args), waitFor);
-    return undefined;
-  };
-};
+  return clone;
+}

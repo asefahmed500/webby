@@ -1,3 +1,4 @@
+
 import { Component } from "@/context/BuilderContext";
 import { Template } from "@/context/BuilderContext";
 
@@ -19,60 +20,63 @@ export const componentTypes = [
 ];
 
 // Create some prebuilt template components
+const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
+
+// Hero Section Components
 const heroSection: Component[] = [
   {
-    id: "component-hero-section",
+    id: generateId(),
     type: "container",
     content: "",
     styles: {
-      padding: "4rem 2rem",
+      padding: "80px 20px",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      textAlign: "center",
-      background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)",
-      color: "white",
-      borderRadius: "0.5rem",
-      gap: "2rem"
+      justifyContent: "center",
+      backgroundImage: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",
+      color: "#ffffff",
+      minHeight: "500px"
     },
     children: [
       {
-        id: "component-hero-heading",
+        id: generateId(),
         type: "heading",
-        content: "Welcome to Your Website",
+        content: "Welcome to Our Website",
         styles: {
-          fontSize: "3rem",
+          fontSize: "48px",
           fontWeight: "bold",
-          marginBottom: "1rem",
-          color: "white"
+          marginBottom: "20px",
+          textAlign: "center"
         },
         children: []
       },
       {
-        id: "component-hero-text",
+        id: generateId(),
         type: "text",
-        content: "Create beautiful websites with our drag-and-drop builder. No coding required.",
+        content: "We provide the best solutions for your business needs",
         styles: {
-          fontSize: "1.25rem",
-          maxWidth: "600px",
-          marginBottom: "2rem",
-          color: "rgba(255, 255, 255, 0.9)"
+          fontSize: "24px",
+          marginBottom: "40px",
+          maxWidth: "800px",
+          textAlign: "center"
         },
         children: []
       },
       {
-        id: "component-hero-button",
+        id: generateId(),
         type: "button",
         content: "Get Started",
         styles: {
-          padding: "0.75rem 1.5rem",
-          backgroundColor: "white",
-          color: "#4F46E5",
-          borderRadius: "0.375rem",
-          fontWeight: "500",
-          fontSize: "1rem",
+          backgroundColor: "#ffffff",
+          color: "#333333",
+          padding: "12px 24px",
+          borderRadius: "4px",
+          fontSize: "18px",
+          fontWeight: "bold",
+          cursor: "pointer",
           border: "none",
-          cursor: "pointer"
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
         },
         children: []
       }
@@ -80,154 +84,137 @@ const heroSection: Component[] = [
   }
 ];
 
+// Features Section Components
 const featuresSection: Component[] = [
   {
-    id: "component-features-section",
+    id: generateId(),
     type: "container",
     content: "",
     styles: {
-      padding: "4rem 2rem",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "3rem"
+      padding: "80px 20px",
+      backgroundColor: "#ffffff"
     },
     children: [
       {
-        id: "component-features-heading",
+        id: generateId(),
         type: "heading",
-        content: "Features",
+        content: "Our Features",
         styles: {
-          fontSize: "2.5rem",
+          fontSize: "36px",
           fontWeight: "bold",
-          marginBottom: "1rem"
+          marginBottom: "40px",
+          textAlign: "center"
         },
         children: []
       },
       {
-        id: "component-features-text",
-        type: "text",
-        content: "Everything you need to build amazing websites",
-        styles: {
-          fontSize: "1.25rem",
-          maxWidth: "600px",
-          textAlign: "center",
-          marginBottom: "2rem",
-          color: "gray"
-        },
-        children: []
-      },
-      {
-        id: "component-features-container",
+        id: generateId(),
         type: "container",
         content: "",
         styles: {
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "2rem",
-          width: "100%"
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "30px"
         },
         children: [
           {
-            id: "component-feature-card-1",
+            id: generateId(),
             type: "card",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem"
+              width: "300px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#f8f9fa"
             },
             children: [
               {
-                id: "component-feature-heading-1",
+                id: generateId(),
                 type: "heading",
-                content: "Easy to Use",
+                content: "Feature 1",
                 styles: {
-                  fontSize: "1.5rem",
-                  fontWeight: "600"
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  marginBottom: "15px"
                 },
                 children: []
               },
               {
-                id: "component-feature-text-1",
+                id: generateId(),
                 type: "text",
-                content: "Our intuitive drag-and-drop interface makes it easy to create beautiful websites.",
+                content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
                 styles: {
-                  color: "gray"
+                  marginBottom: "20px"
                 },
                 children: []
               }
             ]
           },
           {
-            id: "component-feature-card-2",
+            id: generateId(),
             type: "card",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem"
+              width: "300px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#f8f9fa"
             },
             children: [
               {
-                id: "component-feature-heading-2",
+                id: generateId(),
                 type: "heading",
-                content: "Customizable",
+                content: "Feature 2",
                 styles: {
-                  fontSize: "1.5rem",
-                  fontWeight: "600"
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  marginBottom: "15px"
                 },
                 children: []
               },
               {
-                id: "component-feature-text-2",
+                id: generateId(),
                 type: "text",
-                content: "Customize every aspect of your website to match your brand and style.",
+                content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
                 styles: {
-                  color: "gray"
+                  marginBottom: "20px"
                 },
                 children: []
               }
             ]
           },
           {
-            id: "component-feature-card-3",
+            id: generateId(),
             type: "card",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem"
+              width: "300px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#f8f9fa"
             },
             children: [
               {
-                id: "component-feature-heading-3",
+                id: generateId(),
                 type: "heading",
-                content: "Responsive",
+                content: "Feature 3",
                 styles: {
-                  fontSize: "1.5rem",
-                  fontWeight: "600"
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  marginBottom: "15px"
                 },
                 children: []
               },
               {
-                id: "component-feature-text-3",
+                id: generateId(),
                 type: "text",
-                content: "All websites are fully responsive and look great on any device.",
+                content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
                 styles: {
-                  color: "gray"
+                  marginBottom: "20px"
                 },
                 children: []
               }
@@ -239,108 +226,103 @@ const featuresSection: Component[] = [
   }
 ];
 
+// Testimonial Section Components
 const testimonialSection: Component[] = [
   {
-    id: "component-testimonial-section",
+    id: generateId(),
     type: "container",
     content: "",
     styles: {
-      padding: "4rem 2rem",
-      backgroundColor: "#f9fafb",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "3rem"
+      padding: "80px 20px",
+      backgroundColor: "#f7f9fc"
     },
     children: [
       {
-        id: "component-testimonial-heading",
+        id: generateId(),
         type: "heading",
-        content: "What Our Users Say",
+        content: "What Our Customers Say",
         styles: {
-          fontSize: "2.5rem",
+          fontSize: "36px",
           fontWeight: "bold",
-          marginBottom: "1rem"
+          marginBottom: "40px",
+          textAlign: "center"
         },
         children: []
       },
       {
-        id: "component-testimonials-container",
+        id: generateId(),
         type: "container",
         content: "",
         styles: {
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "2rem",
-          width: "100%",
-          maxWidth: "1200px"
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "30px"
         },
         children: [
           {
-            id: "component-testimonial-1",
+            id: generateId(),
             type: "testimonial",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem"
+              width: "350px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#ffffff"
             },
             children: [
               {
-                id: "component-testimonial-quote-1",
+                id: generateId(),
                 type: "text",
-                content: ""I was able to create a professional website for my business in just a few hours. The builder is so easy to use!"",
+                content: "\"This service has completely transformed our business operations. We couldn't be happier with the results!\"",
                 styles: {
+                  fontSize: "18px",
                   fontStyle: "italic",
-                  marginBottom: "1rem"
+                  marginBottom: "20px"
                 },
                 children: []
               },
               {
-                id: "component-testimonial-author-1",
+                id: generateId(),
                 type: "text",
-                content: "- Sarah Johnson, Small Business Owner",
+                content: "John Doe, CEO",
                 styles: {
-                  fontWeight: "600"
+                  fontWeight: "bold"
                 },
                 children: []
               }
             ]
           },
           {
-            id: "component-testimonial-2",
+            id: generateId(),
             type: "testimonial",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem"
+              width: "350px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#ffffff"
             },
             children: [
               {
-                id: "component-testimonial-quote-2",
+                id: generateId(),
                 type: "text",
-                content: ""The customization options are amazing. I was able to create a website that perfectly matches my brand."",
+                content: "\"The team was incredibly responsive and helped us achieve our goals in record time.\"",
                 styles: {
+                  fontSize: "18px",
                   fontStyle: "italic",
-                  marginBottom: "1rem"
+                  marginBottom: "20px"
                 },
                 children: []
               },
               {
-                id: "component-testimonial-author-2",
+                id: generateId(),
                 type: "text",
-                content: "- Michael Rodriguez, Designer",
+                content: "Jane Smith, Marketing Director",
                 styles: {
-                  fontWeight: "600"
+                  fontWeight: "bold"
                 },
                 children: []
               }
@@ -352,336 +334,228 @@ const testimonialSection: Component[] = [
   }
 ];
 
+// Pricing Section Components
 const pricingSection: Component[] = [
   {
-    id: "component-pricing-section",
+    id: generateId(),
     type: "container",
     content: "",
     styles: {
-      padding: "4rem 2rem",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "3rem"
+      padding: "80px 20px",
+      backgroundColor: "#ffffff"
     },
     children: [
       {
-        id: "component-pricing-heading",
+        id: generateId(),
         type: "heading",
-        content: "Pricing",
+        content: "Our Pricing Plans",
         styles: {
-          fontSize: "2.5rem",
+          fontSize: "36px",
           fontWeight: "bold",
-          marginBottom: "1rem"
+          marginBottom: "40px",
+          textAlign: "center"
         },
         children: []
       },
       {
-        id: "component-pricing-text",
-        type: "text",
-        content: "Choose the plan that works for you",
-        styles: {
-          fontSize: "1.25rem",
-          maxWidth: "600px",
-          textAlign: "center",
-          marginBottom: "2rem",
-          color: "gray"
-        },
-        children: []
-      },
-      {
-        id: "component-pricing-container",
-        type: "container",
+        id: generateId(),
+        type: "pricing",
         content: "",
         styles: {
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "2rem",
-          width: "100%",
-          maxWidth: "1200px"
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "30px"
         },
         children: [
           {
-            id: "component-pricing-card-1",
-            type: "pricing",
+            id: generateId(),
+            type: "card",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-              border: "1px solid #e5e7eb"
+              width: "300px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#f8f9fa",
+              textAlign: "center"
             },
             children: [
               {
-                id: "component-pricing-tier-1",
+                id: generateId(),
                 type: "heading",
-                content: "Basic",
+                content: "Basic Plan",
                 styles: {
-                  fontSize: "1.5rem",
-                  fontWeight: "600",
-                  textAlign: "center"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-price-1",
-                type: "heading",
-                content: "$9/month",
-                styles: {
-                  fontSize: "2rem",
+                  fontSize: "24px",
                   fontWeight: "bold",
-                  textAlign: "center",
-                  marginBottom: "1rem"
+                  marginBottom: "15px"
                 },
                 children: []
               },
               {
-                id: "component-pricing-feature-1-1",
-                type: "text",
-                content: "✓ 1 Website",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-1-2",
-                type: "text",
-                content: "✓ 5 Pages",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-1-3",
-                type: "text",
-                content: "✓ Basic Templates",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-button-1",
-                type: "button",
-                content: "Get Started",
-                styles: {
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "#4F46E5",
-                  color: "white",
-                  borderRadius: "0.375rem",
-                  fontWeight: "500",
-                  fontSize: "1rem",
-                  border: "none",
-                  cursor: "pointer",
-                  marginTop: "1.5rem",
-                  width: "100%",
-                  textAlign: "center"
-                },
-                children: []
-              }
-            ]
-          },
-          {
-            id: "component-pricing-card-2",
-            type: "pricing",
-            content: "",
-            styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-              border: "2px solid #4F46E5",
-              transform: "scale(1.05)"
-            },
-            children: [
-              {
-                id: "component-pricing-tier-2",
-                type: "heading",
-                content: "Pro",
-                styles: {
-                  fontSize: "1.5rem",
-                  fontWeight: "600",
-                  textAlign: "center"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-price-2",
+                id: generateId(),
                 type: "heading",
                 content: "$19/month",
                 styles: {
-                  fontSize: "2rem",
+                  fontSize: "36px",
                   fontWeight: "bold",
-                  textAlign: "center",
-                  marginBottom: "1rem"
+                  marginBottom: "20px",
+                  color: "#4a6cf7"
                 },
                 children: []
               },
               {
-                id: "component-pricing-feature-2-1",
+                id: generateId(),
                 type: "text",
-                content: "✓ 5 Websites",
+                content: "For individuals and small teams",
                 styles: {
-                  marginBottom: "0.5rem"
+                  marginBottom: "20px",
+                  color: "#666"
                 },
                 children: []
               },
               {
-                id: "component-pricing-feature-2-2",
-                type: "text",
-                content: "✓ Unlimited Pages",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-2-3",
-                type: "text",
-                content: "✓ Premium Templates",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-2-4",
-                type: "text",
-                content: "✓ Custom Domain",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-button-2",
+                id: generateId(),
                 type: "button",
                 content: "Get Started",
                 styles: {
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "#4F46E5",
-                  color: "white",
-                  borderRadius: "0.375rem",
-                  fontWeight: "500",
-                  fontSize: "1rem",
-                  border: "none",
+                  backgroundColor: "#4a6cf7",
+                  color: "#ffffff",
+                  padding: "10px 20px",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
                   cursor: "pointer",
-                  marginTop: "1.5rem",
-                  width: "100%",
-                  textAlign: "center"
+                  border: "none"
                 },
                 children: []
               }
             ]
           },
           {
-            id: "component-pricing-card-3",
-            type: "pricing",
+            id: generateId(),
+            type: "card",
             content: "",
             styles: {
-              padding: "2rem",
-              borderRadius: "0.5rem",
-              backgroundColor: "white",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-              border: "1px solid #e5e7eb"
+              width: "300px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 10px rgba(74, 108, 247, 0.3)",
+              backgroundColor: "#ffffff",
+              textAlign: "center",
+              border: "2px solid #4a6cf7"
             },
             children: [
               {
-                id: "component-pricing-tier-3",
+                id: generateId(),
                 type: "heading",
-                content: "Enterprise",
+                content: "Pro Plan",
                 styles: {
-                  fontSize: "1.5rem",
-                  fontWeight: "600",
-                  textAlign: "center"
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  marginBottom: "15px"
                 },
                 children: []
               },
               {
-                id: "component-pricing-price-3",
+                id: generateId(),
                 type: "heading",
                 content: "$49/month",
                 styles: {
-                  fontSize: "2rem",
+                  fontSize: "36px",
                   fontWeight: "bold",
-                  textAlign: "center",
-                  marginBottom: "1rem"
+                  marginBottom: "20px",
+                  color: "#4a6cf7"
                 },
                 children: []
               },
               {
-                id: "component-pricing-feature-3-1",
+                id: generateId(),
                 type: "text",
-                content: "✓ Unlimited Websites",
+                content: "For growing businesses",
                 styles: {
-                  marginBottom: "0.5rem"
+                  marginBottom: "20px",
+                  color: "#666"
                 },
                 children: []
               },
               {
-                id: "component-pricing-feature-3-2",
-                type: "text",
-                content: "✓ Unlimited Pages",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-3-3",
-                type: "text",
-                content: "✓ All Templates",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-3-4",
-                type: "text",
-                content: "✓ Custom Domain",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-feature-3-5",
-                type: "text",
-                content: "✓ Priority Support",
-                styles: {
-                  marginBottom: "0.5rem"
-                },
-                children: []
-              },
-              {
-                id: "component-pricing-button-3",
+                id: generateId(),
                 type: "button",
-                content: "Contact Sales",
+                content: "Get Started",
                 styles: {
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "#4F46E5",
-                  color: "white",
-                  borderRadius: "0.375rem",
-                  fontWeight: "500",
-                  fontSize: "1rem",
-                  border: "none",
+                  backgroundColor: "#4a6cf7",
+                  color: "#ffffff",
+                  padding: "10px 20px",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
                   cursor: "pointer",
-                  marginTop: "1.5rem",
-                  width: "100%",
-                  textAlign: "center"
+                  border: "none"
+                },
+                children: []
+              }
+            ]
+          },
+          {
+            id: generateId(),
+            type: "card",
+            content: "",
+            styles: {
+              width: "300px",
+              padding: "30px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#f8f9fa",
+              textAlign: "center"
+            },
+            children: [
+              {
+                id: generateId(),
+                type: "heading",
+                content: "Enterprise",
+                styles: {
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  marginBottom: "15px"
+                },
+                children: []
+              },
+              {
+                id: generateId(),
+                type: "heading",
+                content: "$99/month",
+                styles: {
+                  fontSize: "36px",
+                  fontWeight: "bold",
+                  marginBottom: "20px",
+                  color: "#4a6cf7"
+                },
+                children: []
+              },
+              {
+                id: generateId(),
+                type: "text",
+                content: "For large organizations",
+                styles: {
+                  marginBottom: "20px",
+                  color: "#666"
+                },
+                children: []
+              },
+              {
+                id: generateId(),
+                type: "button",
+                content: "Contact Us",
+                styles: {
+                  backgroundColor: "#4a6cf7",
+                  color: "#ffffff",
+                  padding: "10px 20px",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  border: "none"
                 },
                 children: []
               }
@@ -693,107 +567,96 @@ const pricingSection: Component[] = [
   }
 ];
 
+// Contact Form Section
 const contactSection: Component[] = [
   {
-    id: "component-contact-section",
+    id: generateId(),
     type: "container",
     content: "",
     styles: {
-      padding: "4rem 2rem",
-      backgroundColor: "#f9fafb",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "3rem"
+      padding: "80px 20px",
+      backgroundColor: "#f7f9fc"
     },
     children: [
       {
-        id: "component-contact-heading",
+        id: generateId(),
         type: "heading",
         content: "Contact Us",
         styles: {
-          fontSize: "2.5rem",
+          fontSize: "36px",
           fontWeight: "bold",
-          marginBottom: "1rem"
+          marginBottom: "40px",
+          textAlign: "center"
         },
         children: []
       },
       {
-        id: "component-contact-text",
-        type: "text",
-        content: "Get in touch with our team",
-        styles: {
-          fontSize: "1.25rem",
-          maxWidth: "600px",
-          textAlign: "center",
-          marginBottom: "2rem",
-          color: "gray"
-        },
-        children: []
-      },
-      {
-        id: "component-contact-form",
+        id: generateId(),
         type: "form",
         content: "",
         styles: {
-          width: "100%",
           maxWidth: "600px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem"
+          margin: "0 auto",
+          padding: "30px",
+          borderRadius: "8px",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          backgroundColor: "#ffffff"
         },
         children: [
           {
-            id: "component-contact-name",
+            id: generateId(),
             type: "input",
-            content: "Name",
+            content: "Your Name",
             styles: {
-              padding: "0.75rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              width: "100%"
-            },
-            children: []
-          },
-          {
-            id: "component-contact-email",
-            type: "input",
-            content: "Email",
-            styles: {
-              padding: "0.75rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              width: "100%"
-            },
-            children: []
-          },
-          {
-            id: "component-contact-message",
-            type: "input",
-            content: "Message",
-            styles: {
-              padding: "0.75rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
               width: "100%",
-              minHeight: "120px"
+              padding: "10px",
+              marginBottom: "15px",
+              borderRadius: "4px",
+              border: "1px solid #ddd"
             },
             children: []
           },
           {
-            id: "component-contact-button",
+            id: generateId(),
+            type: "input",
+            content: "Your Email",
+            styles: {
+              width: "100%",
+              padding: "10px",
+              marginBottom: "15px",
+              borderRadius: "4px",
+              border: "1px solid #ddd"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "input",
+            content: "Your Message",
+            styles: {
+              width: "100%",
+              padding: "10px",
+              marginBottom: "20px",
+              borderRadius: "4px",
+              border: "1px solid #ddd",
+              minHeight: "100px"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
             type: "button",
             content: "Send Message",
             styles: {
-              padding: "0.75rem 1.5rem",
-              backgroundColor: "#4F46E5",
-              color: "white",
-              borderRadius: "0.375rem",
-              fontWeight: "500",
-              fontSize: "1rem",
-              border: "none",
+              backgroundColor: "#4a6cf7",
+              color: "#ffffff",
+              padding: "12px 24px",
+              borderRadius: "4px",
+              fontSize: "16px",
+              fontWeight: "bold",
               cursor: "pointer",
-              marginTop: "0.5rem"
+              border: "none",
+              width: "100%"
             },
             children: []
           }
@@ -803,6 +666,7 @@ const contactSection: Component[] = [
   }
 ];
 
+// Export templates array
 export const templates: Template[] = [
   {
     id: "hero-section",
