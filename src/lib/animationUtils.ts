@@ -145,26 +145,32 @@ export function applyShimmerEffect(element: HTMLElement) {
 }
 
 // Generate optimized cloneDeep function for component trees
-export function cloneDeep<T extends object>(obj: T): T {
-  // For components, use optimized path
-  if ((obj as any).type && (obj as any).id) {
-    return JSON.parse(JSON.stringify(obj));
-  }
-  
-  // For other objects, use recursive approach for better performance
+export function cloneDeep<T>(obj: T): T {
+  // For null or non-objects, return as is
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
   
+  // Special case for components
+  if (typeof obj === 'object' && 'type' in obj && 'id' in obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+  
+  // Handle arrays
   if (Array.isArray(obj)) {
     return obj.map(item => cloneDeep(item)) as unknown as T;
   }
   
+  // Handle regular objects
   const clone = {} as T;
   
   Object.keys(obj).forEach(key => {
     const k = key as keyof T;
-    clone[k] = cloneDeep(obj[k]);
+    if (typeof obj[k] === 'object' && obj[k] !== null) {
+      clone[k] = cloneDeep(obj[k]) as T[keyof T];
+    } else {
+      clone[k] = obj[k];
+    }
   });
   
   return clone;

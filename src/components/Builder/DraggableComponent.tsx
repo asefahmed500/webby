@@ -8,11 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface DraggableComponentProps {
   component: Component;
   depth?: number;
+  preview?: boolean;
 }
 
 const DraggableComponent: React.FC<DraggableComponentProps> = ({ 
   component,
-  depth = 0
+  depth = 0,
+  preview = false
 }) => {
   const { 
     selectedComponent, 
@@ -23,6 +25,9 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     removeComponent,
     updateComponent
   } = useBuilder();
+  
+  // Use preview prop or context's previewMode
+  const isPreview = preview || previewMode;
   
   const isSelected = selectedComponent?.id === component.id;
   const componentRef = useRef<HTMLDivElement>(null);
@@ -37,7 +42,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
 
   // Handle keyboard shortcuts for selected component
   useEffect(() => {
-    if (!isSelected || previewMode) return;
+    if (!isSelected || isPreview) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Handle delete
@@ -73,7 +78,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSelected, component.id, previewMode, removeComponent, updateComponent, component.styles]);
+  }, [isSelected, component.id, isPreview, removeComponent, updateComponent, component.styles]);
 
   // Apply shimmer effect when component is loading
   useEffect(() => {
@@ -91,7 +96,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     
-    if (previewMode) return;
+    if (isPreview) return;
     
     // Show guidelines when dragging over component
     if (componentRef.current && e.dataTransfer.types.includes('componentType')) {
@@ -99,28 +104,28 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       const newGuidelines = calculateGuidelines([], elementRect);
       setGuidelines(newGuidelines);
     }
-  }, [previewMode]);
+  }, [isPreview]);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (previewMode) return;
+    if (isPreview) return;
     
     componentRef.current?.classList.add('ring-2', 'ring-blue-400', 'ring-opacity-70');
-  }, [previewMode]);
+  }, [isPreview]);
   
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (previewMode) return;
+    if (isPreview) return;
     
     componentRef.current?.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-70');
     setGuidelines([]);
-  }, [previewMode]);
+  }, [isPreview]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (previewMode) return;
+    if (isPreview) return;
     
     setGuidelines([]);
     componentRef.current?.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-70');
@@ -140,10 +145,10 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
         setIsLoading(false);
       }, 300);
     }
-  }, [component, addComponent, previewMode]);
+  }, [component, addComponent, isPreview]);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
-    if (previewMode) {
+    if (isPreview) {
       e.preventDefault();
       return;
     }
@@ -182,10 +187,10 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     
     e.dataTransfer.setData('text/plain', component.id);
     e.dataTransfer.effectAllowed = 'move';
-  }, [component.id, previewMode]);
+  }, [component.id, isPreview]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
-    if (previewMode) return;
+    if (isPreview) return;
     
     setIsDraggingSelf(false);
     setGuidelines([]);
@@ -199,7 +204,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
         springAnimate(componentRef.current, { x: 0, y: 0 }, { x: 0, y: 0 }, 300);
       }
     }
-  }, [dragStartPos, previewMode]);
+  }, [dragStartPos, isPreview]);
 
   const renderComponentContent = () => {
     if (isLoading) {
@@ -217,7 +222,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
           <div 
             className={cn(
               "relative",
-              !previewMode && "min-h-[50px]"
+              !isPreview && "min-h-[50px]"
             )}
             style={memoizedStyles}
           >
@@ -226,9 +231,10 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
                 key={child.id} 
                 component={child} 
                 depth={depth + 1} 
+                preview={isPreview}
               />
             ))}
-            {!previewMode && memoizedChildren.length === 0 && (
+            {!isPreview && memoizedChildren.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
                 Drop components here
               </div>
@@ -254,11 +260,11 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
         return (
           <button 
             className={cn(
-              previewMode ? "cursor-pointer" : "cursor-default",
+              isPreview ? "cursor-pointer" : "cursor-default",
               "transition-all"
             )} 
             style={memoizedStyles}
-            onClick={(e) => previewMode ? null : e.preventDefault()}
+            onClick={(e) => isPreview ? null : e.preventDefault()}
           >
             {component.content || "Button"}
           </button>
@@ -272,11 +278,11 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
             placeholder={component.content || "Enter text..."} 
             style={memoizedStyles} 
             className={cn(
-              previewMode ? "cursor-text" : "cursor-default",
+              isPreview ? "cursor-text" : "cursor-default",
               "transition-all"
             )}
-            onClick={(e) => previewMode ? null : e.stopPropagation()}
-            readOnly={!previewMode}
+            onClick={(e) => isPreview ? null : e.stopPropagation()}
+            readOnly={!isPreview}
           />
         );
       case "pricing":
@@ -287,9 +293,10 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
                 key={child.id} 
                 component={child} 
                 depth={depth + 1} 
+                preview={isPreview}
               />
             ))}
-            {!previewMode && memoizedChildren.length === 0 && (
+            {!isPreview && memoizedChildren.length === 0 && (
               <div className="flex items-center justify-center text-gray-400 text-sm h-[100px]">
                 Pricing component (add content)
               </div>
@@ -303,14 +310,14 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
 
   // Optimize selection UI render
   const selectionClasses = useMemo(() => {
-    if (previewMode) return "";
+    if (isPreview) return "";
     return cn(
       "transition-all duration-200",
       isSelected && "outline outline-2 outline-blue-500",
       isDragging && "opacity-50",
       isDraggingSelf && "opacity-70 shadow-lg"
     );
-  }, [previewMode, isSelected, isDragging, isDraggingSelf]);
+  }, [isPreview, isSelected, isDragging, isDraggingSelf]);
 
   return (
     <div
@@ -318,16 +325,16 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       className={cn(
         "relative",
         selectionClasses,
-        !previewMode && "hover:outline hover:outline-1 hover:outline-gray-300"
+        !isPreview && "hover:outline hover:outline-1 hover:outline-gray-300"
       )}
-      onClick={!previewMode ? handleClick : undefined}
-      onDragOver={!previewMode ? handleDragOver : undefined}
-      onDragEnter={!previewMode ? handleDragEnter : undefined}
-      onDragLeave={!previewMode ? handleDragLeave : undefined}
-      onDrop={!previewMode ? handleDrop : undefined}
-      onDragStart={!previewMode ? handleDragStart : undefined}
-      onDragEnd={!previewMode ? handleDragEnd : undefined}
-      draggable={!previewMode}
+      onClick={!isPreview ? handleClick : undefined}
+      onDragOver={!isPreview ? handleDragOver : undefined}
+      onDragEnter={!isPreview ? handleDragEnter : undefined}
+      onDragLeave={!isPreview ? handleDragLeave : undefined}
+      onDrop={!isPreview ? handleDrop : undefined}
+      onDragStart={!isPreview ? handleDragStart : undefined}
+      onDragEnd={!isPreview ? handleDragEnd : undefined}
+      draggable={!isPreview}
       data-component-id={component.id}
     >
       {renderComponentContent()}
