@@ -166,11 +166,9 @@ export function cloneDeep<T>(obj: T): T {
   
   Object.keys(obj).forEach(key => {
     const k = key as keyof T;
-    if (typeof obj[k] === 'object' && obj[k] !== null) {
-      clone[k] = cloneDeep(obj[k]) as T[keyof T];
-    } else {
-      clone[k] = obj[k];
-    }
+    clone[k] = typeof obj[k] === 'object' && obj[k] !== null 
+      ? cloneDeep(obj[k]) 
+      : obj[k];
   });
   
   return clone;

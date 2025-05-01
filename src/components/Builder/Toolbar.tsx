@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -15,7 +14,8 @@ import {
   Trash, 
   Download,
   FileText,
-  LayoutDashboard
+  LayoutDashboard,
+  Settings
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -24,6 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import PageManager from "./PageManager";
+import SEOSettings from "./SEOSettings";
 
 const Toolbar = () => {
   const { components, setComponents, previewMode, pages, currentPageId, websiteName, saveWebsite } = useBuilder();
@@ -36,6 +37,8 @@ const Toolbar = () => {
     navigate("/auth");
     return null;
   }
+
+  const [seoDialogOpen, setSeoDialogOpen] = useState(false);
 
   const handleSave = async () => {
     try {
@@ -134,6 +137,18 @@ const Toolbar = () => {
               <LayoutDashboard className="h-4 w-4 mr-1" />
               Dashboard
             </Button>
+            
+            <Sheet open={seoDialogOpen} onOpenChange={setSeoDialogOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-1" />
+                  SEO
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[400px] sm:w-[540px] overflow-y-auto">
+                <SEOSettings onClose={() => setSeoDialogOpen(false)} />
+              </SheetContent>
+            </Sheet>
           </div>
         )}
       </div>

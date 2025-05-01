@@ -164,6 +164,16 @@ export const storageService = {
       .from(bucketName)
       .list(folderPath || '');
     return { data, error };
+  },
+  
+  // Create storage folder
+  createFolder: async (bucketName: string, folderPath: string) => {
+    // Supabase doesn't explicitly create folders, they're created when files are added
+    // We'll create an empty .folder file to simulate folder creation
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(`${folderPath}/.folder`, new Blob(['']));
+    return { data, error };
   }
 };
 

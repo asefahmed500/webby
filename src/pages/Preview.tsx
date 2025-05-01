@@ -5,9 +5,9 @@ import { Helmet } from 'react-helmet';
 import { Page } from '@/lib/pageData';
 import DraggableComponent from '@/components/Builder/DraggableComponent';
 
-// Update the interface to satisfy the Record<string, string> constraint
-interface PreviewParams extends Record<string, string> {
+interface PreviewParams {
   slug?: string;
+  [key: string]: string | undefined;
 }
 
 const Preview = () => {

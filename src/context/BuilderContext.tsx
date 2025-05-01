@@ -3,6 +3,8 @@ import { defaultPages, Page } from "@/lib/pageData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { SEOSettings as SEOSettingsType, defaultSEOSettings } from '@/lib/seoUtils';
+import { storageService } from '@/lib/supabaseServices';
 
 export interface Component {
   id: string;
@@ -54,6 +56,9 @@ interface BuilderContextType {
   isSaving: boolean;
   viewportSize: "desktop" | "tablet" | "mobile";
   setViewportSize: React.Dispatch<React.SetStateAction<"desktop" | "tablet" | "mobile">>;
+  seoSettings: SEOSettingsType | null;
+  setSEOSettings: React.Dispatch<React.SetStateAction<SEOSettingsType | null>>;
+  uploadImage: (file: File) => Promise<string>;
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -93,6 +98,7 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [seoSettings, setSEOSettings] = useState<SEOSettingsType | null>(null);
 
   const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -206,6 +212,10 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
             setWebsiteName(parsedData.websiteName);
           }
           
+          if (parsedData.seoSettings) {
+            setSEOSettings(parsedData.seoSettings);
+          }
+          
           if (parsedData.currentPageId) {
             setCurrentPageId(parsedData.currentPageId);
           } else {
@@ -224,6 +234,10 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
           
           if (parsedData.websiteName) {
             setWebsiteName(parsedData.websiteName);
+          }
+          
+          if (parsedData.seoSettings) {
+            setSEOSettings(parsedData.seoSettings);
           }
           
           if (parsedData.currentPageId) {
@@ -359,7 +373,8 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
         websiteName,
         updatedAt: new Date().toISOString(),
         userId: user?.id,
-        currentPageId
+        currentPageId,
+        seoSettings // <-- Add SEO settings to saved data
       };
       
       console.log("Saving website data:", JSON.stringify(websiteData));
@@ -522,6 +537,27 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     toast.success("Page deleted");
   }, [pages, currentPageId, components, addToHistory]);
 
+  const uploadImage = async (file: File): Promise<string> => {
+    if (!user) {
+      throw new Error("You must be logged in to upload images");
+    }
+    
+    try {
+      const filePath = `user-uploads/${user.id}/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+      
+      const { data, error } = await storageService.uploadFile('website_assets', filePath, file);
+      
+      if (error) throw error;
+      
+      // Get the public URL for the uploaded file
+      const imageUrl = storageService.getFileUrl('website_assets', filePath);
+      return imageUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
   const contextValue = useMemo(() => ({
     components,
     setComponents,
@@ -556,13 +592,17 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     lastSaved,
     isSaving,
     viewportSize,
-    setViewportSize
+    setViewportSize,
+    seoSettings,
+    setSEOSettings,
+    uploadImage
   }), [
     components, selectedComponent, isDragging, draggedComponent, 
     previewMode, pages, currentPageId, publishStatus, websiteId, 
     websiteName, addComponent, updateComponent, removeComponent,
     addPage, removePage, saveWebsite, undoChange, redoChange,
-    canUndo, canRedo, lastSaved, isSaving, viewportSize
+    canUndo, canRedo, lastSaved, isSaving, viewportSize,
+    seoSettings, setSEOSettings, uploadImage
   ]);
 
   return (
