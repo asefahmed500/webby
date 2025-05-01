@@ -15,19 +15,20 @@ import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Templates from "./pages/Templates";
+import React from 'react';
 
-// Create a new QueryClient instance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1
-    },
-  },
-});
-
-// Make sure App is a proper React component
+// Create a new QueryClient instance - moved inside the component to ensure it's created fresh for each render
 const App = () => {
+  // Create a new QueryClient instance within the component
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1
+      },
+    },
+  }));
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

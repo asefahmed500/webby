@@ -1,3 +1,4 @@
+
 import { 
   LayoutDashboard, 
   Type, 
@@ -15,78 +16,78 @@ import {
   Footer as FooterComp, // Rename to avoid conflict
 } from "lucide-react";
 
+// We're using a functional approach to define icons rather than JSX
 export const componentCategories = [
   {
     id: "layout",
     name: "Layout",
-    icon: <LayoutDashboard size={16} />,
+    icon: LayoutDashboard,
     components: ["container", "section", "row", "column", "card"],
   },
   {
     id: "basic",
     name: "Basic",
-    icon: <Type size={16} />,
+    icon: Type,
     components: ["text", "heading", "image", "button", "link", "divider", "spacer"],
   },
   {
     id: "navigation",
     name: "Navigation",
-    icon: <Menu size={16} />,
+    icon: Menu,
     components: ["navbar", "sidebar", "footer", "breadcrumbs"],
   },
   {
     id: "sections",
     name: "Sections",
-    icon: <List size={16} />,
+    icon: List,
     components: ["hero-section", "features-section", "team-section", "testimonials-section", "cta-section", "pricing-section"],
   },
   {
     id: "forms",
     name: "Forms",
-    icon: <Form size={16} />,
+    icon: Form,
     components: ["input", "form", "textarea", "checkbox", "radio", "select"],
   },
   {
     id: "media",
     name: "Media",
-    icon: <Image size={16} />,
+    icon: Image,
     components: ["gallery", "video", "carousel", "icon"],
   },
   {
     id: "social",
     name: "Social",
-    icon: <Users size={16} />,
+    icon: Users,
     components: ["social-icons", "share-buttons", "comments"],
   }
 ];
 
-// Replace FooterIcon with FooterComp
 export const navigationComponents = [
   {
     id: "navbar",
     name: "Navbar",
-    icon: <Menu size={16} />,
+    icon: Menu,
     description: "Navigation bar for your website",
     variants: ["basic", "centered", "transparent"],
   },
   {
     id: "sidebar",
     name: "Sidebar",
-    icon: <Menu size={16} />,
+    icon: Menu,
     description: "Side navigation menu",
     variants: ["fixed", "collapsible"],
   },
   {
     id: "footer",
     name: "Footer",
-    icon: <FooterComp size={16} />,
+    icon: FooterComp,
     description: "Footer section",
     variants: ["simple", "multicolumn"],
   },
   {
     id: "breadcrumbs",
     name: "Breadcrumbs",
-    icon: <LinkIcon size={16} />,
+    icon: LinkIcon,
     description: "Breadcrumb navigation",
     variants: ["basic", "with-icons"],
   },
@@ -97,42 +98,42 @@ export const sectionTemplates = [
   {
     id: "hero-section",
     name: "Hero Section",
-    icon: <Image size={16} />,
+    icon: Image,
     description: "Main hero section with heading and call-to-action",
     variants: ["centered", "split", "video-background", "modern"],
   },
   {
     id: "features-section",
     name: "Features Section",
-    icon: <List size={16} />,
+    icon: List,
     description: "Showcase your product or service features",
     variants: ["grid", "list", "tabs"],
   },
   {
     id: "testimonials-section",
     name: "Testimonials",
-    icon: <MessageSquare size={16} />,
+    icon: MessageSquare,
     description: "Customer testimonials and reviews",
     variants: ["cards", "carousel", "quotes"],
   },
   {
     id: "team-section",
     name: "Team Section",
-    icon: <Users size={16} />,
+    icon: Users,
     description: "Showcase your team members",
     variants: ["grid", "carousel", "featured"],
   },
   {
     id: "cta-section",
     name: "Call to Action",
-    icon: <ArrowRight size={16} />,
+    icon: ArrowRight,
     description: "Prompt user action",
     variants: ["banner", "box", "fullscreen"],
   },
   {
     id: "pricing-section",
     name: "Pricing Section",
-    icon: <ButtonIcon size={16} />,
+    icon: ButtonIcon,
     description: "Showcase your pricing plans",
     variants: ["table", "cards", "toggle"]
   },
