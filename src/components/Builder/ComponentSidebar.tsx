@@ -27,7 +27,13 @@ import {
   UserPlus,
   Mail,
   ShoppingBag,
-  CreditCard
+  CreditCard,
+  Users,
+  Rocket,
+  Home,
+  CalendarClock,
+  Utensils,
+  GraduationCap
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -51,16 +57,57 @@ const iconMap: Record<string, React.ReactNode> = {
   "user-plus": <UserPlus className="h-4 w-4" />,
   "mail": <Mail className="h-4 w-4" />,
   "shopping-bag": <ShoppingBag className="h-4 w-4" />,
-  "credit-card": <CreditCard className="h-4 w-4" />
+  "credit-card": <CreditCard className="h-4 w-4" />,
+  "users": <Users className="h-4 w-4" />,
+  "rocket": <Rocket className="h-4 w-4" />,
+  "home": <Home className="h-4 w-4" />,
+  "calendar": <CalendarClock className="h-4 w-4" />,
+  "utensils": <Utensils className="h-4 w-4" />,
+  "graduation-cap": <GraduationCap className="h-4 w-4" />
 };
 
 const ComponentSidebar = () => {
   const { setDraggedComponent } = useBuilder();
   const [activeTab, setActiveTab] = useState("components");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const handleDragStart = (componentType: string) => {
     setDraggedComponent(componentType);
   };
+
+  // Filter templates based on search term
+  const filteredTemplates = templates.filter(template => 
+    template.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get categories for filtering
+  const categories = ["all", ...new Set(templates.map(t => {
+    if (t.id.includes("hero")) return "hero";
+    if (t.id.includes("feature")) return "features";
+    if (t.id.includes("testimonial")) return "testimonials";
+    if (t.id.includes("pricing")) return "pricing";
+    if (t.id.includes("contact")) return "contact";
+    if (t.id.includes("team")) return "team";
+    if (t.id.includes("cta")) return "cta";
+    if (t.id.includes("footer")) return "footer";
+    return "other";
+  }))];
+
+  // Filter templates by category
+  const categoryFilteredTemplates = selectedCategory === "all" 
+    ? filteredTemplates 
+    : filteredTemplates.filter(t => {
+        if (selectedCategory === "hero" && t.id.includes("hero")) return true;
+        if (selectedCategory === "features" && t.id.includes("feature")) return true;
+        if (selectedCategory === "testimonials" && t.id.includes("testimonial")) return true;
+        if (selectedCategory === "pricing" && t.id.includes("pricing")) return true;
+        if (selectedCategory === "contact" && t.id.includes("contact")) return true;
+        if (selectedCategory === "team" && t.id.includes("team")) return true;
+        if (selectedCategory === "cta" && t.id.includes("cta")) return true;
+        if (selectedCategory === "footer" && t.id.includes("footer")) return true;
+        return selectedCategory === "other" && !["hero", "feature", "testimonial", "pricing", "contact", "team", "cta", "footer"].some(cat => t.id.includes(cat));
+      });
 
   return (
     <div className="w-64 border-r border-gray-200 bg-white h-full overflow-auto">
@@ -102,23 +149,54 @@ const ComponentSidebar = () => {
         </TabsContent>
 
         <TabsContent value="templates" className="mt-0 space-y-0">
-          <div className="grid grid-cols-1 gap-4 p-4">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                draggable
-                onDragStart={() => handleDragStart(`template:${template.id}`)}
-                className={cn(
-                  "p-3 rounded-md border border-gray-200",
-                  "hover:border-blue-500 hover:bg-blue-50 cursor-grab transition-colors"
-                )}
-              >
-                <div className="bg-gray-100 p-4 rounded-md flex items-center justify-center mb-2">
-                  {iconMap[template.thumbnail] || <div className="h-10 w-10" />}
+          <div className="p-4">
+            {/* Search input */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search templates..."
+                className="w-full rounded-md border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            {/* Category filters */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={cn(
+                    "text-xs px-2 py-1 rounded-md transition-colors",
+                    selectedCategory === category
+                      ? "bg-blue-100 text-blue-700 font-medium"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
+                >
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </button>
+              ))}
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {categoryFilteredTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  draggable
+                  onDragStart={() => handleDragStart(`template:${template.id}`)}
+                  className={cn(
+                    "p-3 rounded-md border border-gray-200",
+                    "hover:border-blue-500 hover:bg-blue-50 cursor-grab transition-colors"
+                  )}
+                >
+                  <div className="bg-gray-100 p-4 rounded-md flex items-center justify-center mb-2">
+                    {iconMap[template.thumbnail] || <div className="h-10 w-10" />}
+                  </div>
+                  <h3 className="text-sm font-medium">{template.name}</h3>
                 </div>
-                <h3 className="text-sm font-medium">{template.name}</h3>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </TabsContent>
       </Tabs>

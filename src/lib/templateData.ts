@@ -213,6 +213,183 @@ const bookingPages: Page[] = [
   }
 ];
 
+// Blog website template
+const blogPages: Page[] = [
+  {
+    id: "home",
+    name: "Home",
+    path: "/",
+    components: [],
+    isHome: true
+  },
+  {
+    id: "articles",
+    name: "Articles",
+    path: "/articles",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "categories",
+    name: "Categories",
+    path: "/categories",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "about",
+    name: "About",
+    path: "/about",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "contact",
+    name: "Contact",
+    path: "/contact",
+    components: [],
+    isHome: false
+  }
+];
+
+// Restaurant website template
+const restaurantPages: Page[] = [
+  {
+    id: "home",
+    name: "Home",
+    path: "/",
+    components: [],
+    isHome: true
+  },
+  {
+    id: "menu",
+    name: "Menu",
+    path: "/menu",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "reservations",
+    name: "Reservations",
+    path: "/reservations",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "gallery",
+    name: "Gallery",
+    path: "/gallery",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "about",
+    name: "About Us",
+    path: "/about",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "contact",
+    name: "Contact",
+    path: "/contact",
+    components: [],
+    isHome: false
+  }
+];
+
+// Real estate website template
+const realEstatePages: Page[] = [
+  {
+    id: "home",
+    name: "Home",
+    path: "/",
+    components: [],
+    isHome: true
+  },
+  {
+    id: "properties",
+    name: "Properties",
+    path: "/properties",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "agents",
+    name: "Agents",
+    path: "/agents",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "listings",
+    name: "Listings",
+    path: "/listings",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "about",
+    name: "About Us",
+    path: "/about",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "contact",
+    name: "Contact",
+    path: "/contact",
+    components: [],
+    isHome: false
+  }
+];
+
+// Startup website template
+const startupPages: Page[] = [
+  {
+    id: "home",
+    name: "Home",
+    path: "/",
+    components: [],
+    isHome: true
+  },
+  {
+    id: "product",
+    name: "Product",
+    path: "/product",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "pricing",
+    name: "Pricing",
+    path: "/pricing",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "team",
+    name: "Team",
+    path: "/team",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "about",
+    name: "About",
+    path: "/about",
+    components: [],
+    isHome: false
+  },
+  {
+    id: "contact",
+    name: "Contact",
+    path: "/contact",
+    components: [],
+    isHome: false
+  }
+];
+
 export interface TemplateDefinition {
   id: string;
   name: string;
@@ -249,5 +426,33 @@ export const defaultTemplates: TemplateDefinition[] = [
     description: "Allow customers to book services and appointments",
     pages: bookingPages,
     thumbnail: "calendar"
+  },
+  {
+    id: "blog",
+    name: "Blog Website",
+    description: "Share your stories and articles with readers",
+    pages: blogPages,
+    thumbnail: "file-text"
+  },
+  {
+    id: "restaurant",
+    name: "Restaurant Website",
+    description: "Showcase your menu and take reservations",
+    pages: restaurantPages,
+    thumbnail: "utensils"
+  },
+  {
+    id: "realestate",
+    name: "Real Estate Website",
+    description: "List properties and connect with potential buyers",
+    pages: realEstatePages,
+    thumbnail: "home"
+  },
+  {
+    id: "startup",
+    name: "Startup Website",
+    description: "Present your innovative ideas and products",
+    pages: startupPages,
+    thumbnail: "rocket"
   }
 ];

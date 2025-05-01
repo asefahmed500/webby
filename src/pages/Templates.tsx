@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireAuth } from "@/hooks/useRedirectAuth";
 import { toast } from "sonner";
-import { Layout, BookOpen, Briefcase, ShoppingBag, Calendar, FilePlus } from "lucide-react";
+import { Layout, BookOpen, Briefcase, ShoppingBag, Calendar, FilePlus, FileText, Utensils, Home, Rocket } from "lucide-react";
 import { defaultWebsite, Website } from "@/lib/pageData";
 import { defaultTemplates } from "@/lib/templateData";
 
@@ -120,7 +121,11 @@ const TemplatesPage = () => {
                 {template.id === 'portfolio' && <Briefcase className="h-16 w-16 text-indigo-500" />}
                 {template.id === 'ecommerce' && <ShoppingBag className="h-16 w-16 text-purple-500" />}
                 {template.id === 'booking' && <Calendar className="h-16 w-16 text-green-500" />}
-                {!['education', 'portfolio', 'ecommerce', 'booking'].includes(template.id) && <Layout className="h-16 w-16 text-gray-400" />}
+                {template.id === 'blog' && <FileText className="h-16 w-16 text-pink-500" />}
+                {template.id === 'restaurant' && <Utensils className="h-16 w-16 text-orange-500" />}
+                {template.id === 'realestate' && <Home className="h-16 w-16 text-teal-500" />}
+                {template.id === 'startup' && <Rocket className="h-16 w-16 text-amber-500" />}
+                {!['education', 'portfolio', 'ecommerce', 'booking', 'blog', 'restaurant', 'realestate', 'startup'].includes(template.id) && <Layout className="h-16 w-16 text-gray-400" />}
               </div>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl">{template.name}</CardTitle>

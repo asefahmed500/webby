@@ -1,4 +1,3 @@
-
 import { Component } from "@/context/BuilderContext";
 import { Template } from "@/context/BuilderContext";
 
@@ -79,6 +78,103 @@ const heroSection: Component[] = [
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
         },
         children: []
+      }
+    ]
+  }
+];
+
+// Modern Hero Section
+const modernHeroSection: Component[] = [
+  {
+    id: generateId(),
+    type: "container",
+    content: "",
+    styles: {
+      padding: "100px 20px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundImage: "linear-gradient(to right, #243949 0%, #517fa4 100%)",
+      color: "#ffffff",
+      minHeight: "600px",
+      position: "relative",
+      overflow: "hidden"
+    },
+    children: [
+      {
+        id: generateId(),
+        type: "heading",
+        content: "Innovate. Create. Succeed.",
+        styles: {
+          fontSize: "56px",
+          fontWeight: "800",
+          marginBottom: "24px",
+          textAlign: "center",
+          letterSpacing: "-0.02em"
+        },
+        children: []
+      },
+      {
+        id: generateId(),
+        type: "text",
+        content: "Transform your ideas into reality with our powerful tools and expert guidance",
+        styles: {
+          fontSize: "24px",
+          marginBottom: "48px",
+          maxWidth: "700px",
+          textAlign: "center",
+          lineHeight: "1.6",
+          opacity: "0.9"
+        },
+        children: []
+      },
+      {
+        id: generateId(),
+        type: "container",
+        content: "",
+        styles: {
+          display: "flex",
+          gap: "16px",
+          justifyContent: "center"
+        },
+        children: [
+          {
+            id: generateId(),
+            type: "button",
+            content: "Get Started",
+            styles: {
+              backgroundColor: "#ffffff",
+              color: "#333333",
+              padding: "14px 28px",
+              borderRadius: "6px",
+              fontSize: "18px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              border: "none",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "button",
+            content: "Learn More",
+            styles: {
+              backgroundColor: "transparent",
+              color: "#ffffff",
+              padding: "14px 28px",
+              borderRadius: "6px",
+              fontSize: "18px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              border: "1px solid #ffffff",
+              transition: "background-color 0.2s ease"
+            },
+            children: []
+          }
+        ]
       }
     ]
   }
@@ -226,6 +322,186 @@ const featuresSection: Component[] = [
   }
 ];
 
+// Modern Features Section
+const modernFeaturesSection: Component[] = [
+  {
+    id: generateId(),
+    type: "container",
+    content: "",
+    styles: {
+      padding: "100px 20px",
+      backgroundColor: "#ffffff"
+    },
+    children: [
+      {
+        id: generateId(),
+        type: "container",
+        content: "",
+        styles: {
+          maxWidth: "1200px",
+          margin: "0 auto",
+        },
+        children: [
+          {
+            id: generateId(),
+            type: "heading",
+            content: "Why Choose Us",
+            styles: {
+              fontSize: "42px",
+              fontWeight: "bold",
+              marginBottom: "16px",
+              textAlign: "center",
+              color: "#333"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "text",
+            content: "Discover the features that set us apart from the competition",
+            styles: {
+              fontSize: "20px",
+              marginBottom: "60px",
+              textAlign: "center",
+              color: "#666",
+              maxWidth: "700px",
+              margin: "0 auto 60px"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "container",
+            content: "",
+            styles: {
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "40px",
+              justifyContent: "center"
+            },
+            children: [
+              {
+                id: generateId(),
+                type: "card",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#f8f9fa",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  border: "1px solid #eaeaea"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Intuitive Design",
+                    styles: {
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                      marginBottom: "16px",
+                      color: "#333"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "Our user-friendly interface makes it easy to navigate and find exactly what you need, saving you time and frustration.",
+                    styles: {
+                      marginBottom: "24px",
+                      color: "#666",
+                      lineHeight: "1.6"
+                    },
+                    children: []
+                  }
+                ]
+              },
+              {
+                id: generateId(),
+                type: "card",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#f8f9fa",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  border: "1px solid #eaeaea"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Fast Performance",
+                    styles: {
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                      marginBottom: "16px",
+                      color: "#333"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "Lightning-fast load times and responsive interactions ensure a smooth experience across all devices.",
+                    styles: {
+                      marginBottom: "24px",
+                      color: "#666",
+                      lineHeight: "1.6"
+                    },
+                    children: []
+                  }
+                ]
+              },
+              {
+                id: generateId(),
+                type: "card",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#f8f9fa",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  border: "1px solid #eaeaea"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Reliable Support",
+                    styles: {
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                      marginBottom: "16px",
+                      color: "#333"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "Our dedicated team is available 24/7 to assist you with any questions or concerns you may have.",
+                    styles: {
+                      marginBottom: "24px",
+                      color: "#666",
+                      lineHeight: "1.6"
+                    },
+                    children: []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+];
+
 // Testimonial Section Components
 const testimonialSection: Component[] = [
   {
@@ -325,6 +601,219 @@ const testimonialSection: Component[] = [
                   fontWeight: "bold"
                 },
                 children: []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+];
+
+// Modern Testimonial Section 
+const modernTestimonialSection: Component[] = [
+  {
+    id: generateId(),
+    type: "container",
+    content: "",
+    styles: {
+      padding: "100px 20px",
+      backgroundColor: "#f7f9fc"
+    },
+    children: [
+      {
+        id: generateId(),
+        type: "container",
+        content: "",
+        styles: {
+          maxWidth: "1200px",
+          margin: "0 auto",
+        },
+        children: [
+          {
+            id: generateId(),
+            type: "heading",
+            content: "What Our Clients Say",
+            styles: {
+              fontSize: "42px",
+              fontWeight: "bold",
+              marginBottom: "16px",
+              textAlign: "center",
+              color: "#333"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "text",
+            content: "Trusted by thousands of satisfied customers worldwide",
+            styles: {
+              fontSize: "20px",
+              marginBottom: "60px",
+              textAlign: "center",
+              color: "#666",
+              maxWidth: "700px",
+              margin: "0 auto 60px"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "container",
+            content: "",
+            styles: {
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+              gap: "30px",
+              justifyContent: "center"
+            },
+            children: [
+              {
+                id: generateId(),
+                type: "testimonial",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #eaeaea"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "\"I've been using this service for over a year now, and it has completely transformed how my business operates. The platform is intuitive, powerful, and constantly improving.\"",
+                    styles: {
+                      fontSize: "18px",
+                      fontStyle: "italic",
+                      marginBottom: "24px",
+                      lineHeight: "1.7",
+                      color: "#444"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Sarah Johnson",
+                    styles: {
+                      fontSize: "20px",
+                      fontWeight: "bold",
+                      color: "#333",
+                      marginBottom: "4px"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "CEO, TechInnovate",
+                    styles: {
+                      fontWeight: "medium",
+                      color: "#666"
+                    },
+                    children: []
+                  }
+                ]
+              },
+              {
+                id: generateId(),
+                type: "testimonial",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #eaeaea"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "\"The customer support team is phenomenal. They helped us implement complex features and were always available whenever we had questions.\"",
+                    styles: {
+                      fontSize: "18px",
+                      fontStyle: "italic",
+                      marginBottom: "24px",
+                      lineHeight: "1.7",
+                      color: "#444"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Michael Chen",
+                    styles: {
+                      fontSize: "20px",
+                      fontWeight: "bold",
+                      color: "#333",
+                      marginBottom: "4px"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "CTO, GrowthNow",
+                    styles: {
+                      fontWeight: "medium",
+                      color: "#666"
+                    },
+                    children: []
+                  }
+                ]
+              },
+              {
+                id: generateId(),
+                type: "testimonial",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #eaeaea"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "\"We've seen a 200% increase in our productivity since implementing this solution. It's been a game-changer for our entire organization.\"",
+                    styles: {
+                      fontSize: "18px",
+                      fontStyle: "italic",
+                      marginBottom: "24px",
+                      lineHeight: "1.7",
+                      color: "#444"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Lisa Martinez",
+                    styles: {
+                      fontSize: "20px",
+                      fontWeight: "bold",
+                      color: "#333",
+                      marginBottom: "4px"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "text",
+                    content: "Director, FastTrack Solutions",
+                    styles: {
+                      fontWeight: "medium",
+                      color: "#666"
+                    },
+                    children: []
+                  }
+                ]
               }
             ]
           }
@@ -567,135 +1056,101 @@ const pricingSection: Component[] = [
   }
 ];
 
-// Contact Form Section
-const contactSection: Component[] = [
+// Modern Pricing Section 
+const modernPricingSection: Component[] = [
   {
     id: generateId(),
     type: "container",
     content: "",
     styles: {
-      padding: "80px 20px",
-      backgroundColor: "#f7f9fc"
+      padding: "100px 20px",
+      backgroundColor: "#ffffff"
     },
     children: [
       {
         id: generateId(),
-        type: "heading",
-        content: "Contact Us",
-        styles: {
-          fontSize: "36px",
-          fontWeight: "bold",
-          marginBottom: "40px",
-          textAlign: "center"
-        },
-        children: []
-      },
-      {
-        id: generateId(),
-        type: "form",
+        type: "container",
         content: "",
         styles: {
-          maxWidth: "600px",
+          maxWidth: "1200px",
           margin: "0 auto",
-          padding: "30px",
-          borderRadius: "8px",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-          backgroundColor: "#ffffff"
         },
         children: [
           {
             id: generateId(),
-            type: "input",
-            content: "Your Name",
+            type: "heading",
+            content: "Simple, Transparent Pricing",
             styles: {
-              width: "100%",
-              padding: "10px",
-              marginBottom: "15px",
-              borderRadius: "4px",
-              border: "1px solid #ddd"
-            },
-            children: []
-          },
-          {
-            id: generateId(),
-            type: "input",
-            content: "Your Email",
-            styles: {
-              width: "100%",
-              padding: "10px",
-              marginBottom: "15px",
-              borderRadius: "4px",
-              border: "1px solid #ddd"
-            },
-            children: []
-          },
-          {
-            id: generateId(),
-            type: "input",
-            content: "Your Message",
-            styles: {
-              width: "100%",
-              padding: "10px",
-              marginBottom: "20px",
-              borderRadius: "4px",
-              border: "1px solid #ddd",
-              minHeight: "100px"
-            },
-            children: []
-          },
-          {
-            id: generateId(),
-            type: "button",
-            content: "Send Message",
-            styles: {
-              backgroundColor: "#4a6cf7",
-              color: "#ffffff",
-              padding: "12px 24px",
-              borderRadius: "4px",
-              fontSize: "16px",
+              fontSize: "42px",
               fontWeight: "bold",
-              cursor: "pointer",
-              border: "none",
-              width: "100%"
+              marginBottom: "16px",
+              textAlign: "center",
+              color: "#333"
             },
             children: []
-          }
-        ]
-      }
-    ]
-  }
-];
-
-// Export templates array
-export const templates: Template[] = [
-  {
-    id: "hero-section",
-    name: "Hero Section",
-    thumbnail: "layout-dashboard",
-    components: heroSection
-  },
-  {
-    id: "features-section",
-    name: "Features Section",
-    thumbnail: "layout-list",
-    components: featuresSection
-  },
-  {
-    id: "testimonial-section",
-    name: "Testimonials",
-    thumbnail: "quote",
-    components: testimonialSection
-  },
-  {
-    id: "pricing-section",
-    name: "Pricing Table",
-    thumbnail: "badge-dollar-sign",
-    components: pricingSection
-  },
-  {
-    id: "contact-section",
-    name: "Contact Form",
-    thumbnail: "mail",
-    components: contactSection
-  }
-];
+          },
+          {
+            id: generateId(),
+            type: "text",
+            content: "Choose the plan that works best for your needs",
+            styles: {
+              fontSize: "20px",
+              marginBottom: "60px",
+              textAlign: "center",
+              color: "#666",
+              maxWidth: "700px",
+              margin: "0 auto 60px"
+            },
+            children: []
+          },
+          {
+            id: generateId(),
+            type: "pricing",
+            content: "",
+            styles: {
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "30px",
+              justifyContent: "center"
+            },
+            children: [
+              {
+                id: generateId(),
+                type: "card",
+                content: "",
+                styles: {
+                  padding: "40px",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "#f8f9fa",
+                  textAlign: "center",
+                  border: "1px solid #eaeaea",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease"
+                },
+                children: [
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "Starter",
+                    styles: {
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                      marginBottom: "12px",
+                      color: "#333"
+                    },
+                    children: []
+                  },
+                  {
+                    id: generateId(),
+                    type: "heading",
+                    content: "$29/month",
+                    styles: {
+                      fontSize: "36px",
+                      fontWeight: "bold",
+                      marginBottom: "24px",
+                      color: "#4a6cf7"
+                    },
+                    children: []
+                  },
+                  {
+                    id:
