@@ -1,30 +1,142 @@
-
-import {
-  PanelRight,
-  Type,
-  Image,
-  Square,
-  Heading1,
-  Minus,
+import { 
+  LayoutDashboard, 
+  Type, 
+  Image, 
+  Button as ButtonIcon,
+  List,
+  Form, 
+  Link as LinkIcon, 
   Menu,
-  Layout,
-  Grid,
-  Megaphone,
-  Wallet,
-  FileText,
-  FormInput,
-  Quote,
-  BadgeDollarSign,
-  Lock,
-  UserPlus,
-  Mail,
-  ShoppingBag,
-  CreditCard,
+  MessageSquare,
   Users,
-  Box,
-  Navigation,
-  FooterIcon
+  Award,
+  Mail,
+  ArrowRight,
+  Footer as FooterComp, // Rename to avoid conflict
 } from "lucide-react";
+
+export const componentCategories = [
+  {
+    id: "layout",
+    name: "Layout",
+    icon: <LayoutDashboard size={16} />,
+    components: ["container", "section", "row", "column", "card"],
+  },
+  {
+    id: "basic",
+    name: "Basic",
+    icon: <Type size={16} />,
+    components: ["text", "heading", "image", "button", "link", "divider", "spacer"],
+  },
+  {
+    id: "navigation",
+    name: "Navigation",
+    icon: <Menu size={16} />,
+    components: ["navbar", "sidebar", "footer", "breadcrumbs"],
+  },
+  {
+    id: "sections",
+    name: "Sections",
+    icon: <List size={16} />,
+    components: ["hero-section", "features-section", "team-section", "testimonials-section", "cta-section", "pricing-section"],
+  },
+  {
+    id: "forms",
+    name: "Forms",
+    icon: <Form size={16} />,
+    components: ["input", "form", "textarea", "checkbox", "radio", "select"],
+  },
+  {
+    id: "media",
+    name: "Media",
+    icon: <Image size={16} />,
+    components: ["gallery", "video", "carousel", "icon"],
+  },
+  {
+    id: "social",
+    name: "Social",
+    icon: <Users size={16} />,
+    components: ["social-icons", "share-buttons", "comments"],
+  }
+];
+
+// Replace FooterIcon with FooterComp
+export const navigationComponents = [
+  {
+    id: "navbar",
+    name: "Navbar",
+    icon: <Menu size={16} />,
+    description: "Navigation bar for your website",
+    variants: ["basic", "centered", "transparent"],
+  },
+  {
+    id: "sidebar",
+    name: "Sidebar",
+    icon: <Menu size={16} />,
+    description: "Side navigation menu",
+    variants: ["fixed", "collapsible"],
+  },
+  {
+    id: "footer",
+    name: "Footer",
+    icon: <FooterComp size={16} />,
+    description: "Footer section",
+    variants: ["simple", "multicolumn"],
+  },
+  {
+    id: "breadcrumbs",
+    name: "Breadcrumbs",
+    icon: <LinkIcon size={16} />,
+    description: "Breadcrumb navigation",
+    variants: ["basic", "with-icons"],
+  },
+];
+
+// Define section templates
+export const sectionTemplates = [
+  {
+    id: "hero-section",
+    name: "Hero Section",
+    icon: <Image size={16} />,
+    description: "Main hero section with heading and call-to-action",
+    variants: ["centered", "split", "video-background", "modern"],
+  },
+  {
+    id: "features-section",
+    name: "Features Section",
+    icon: <List size={16} />,
+    description: "Showcase your product or service features",
+    variants: ["grid", "list", "tabs"],
+  },
+  {
+    id: "testimonials-section",
+    name: "Testimonials",
+    icon: <MessageSquare size={16} />,
+    description: "Customer testimonials and reviews",
+    variants: ["cards", "carousel", "quotes"],
+  },
+  {
+    id: "team-section",
+    name: "Team Section",
+    icon: <Users size={16} />,
+    description: "Showcase your team members",
+    variants: ["grid", "carousel", "featured"],
+  },
+  {
+    id: "cta-section",
+    name: "Call to Action",
+    icon: <ArrowRight size={16} />,
+    description: "Prompt user action",
+    variants: ["banner", "box", "fullscreen"],
+  },
+  {
+    id: "pricing-section",
+    name: "Pricing Section",
+    icon: <ButtonIcon size={16} />,
+    description: "Showcase your pricing plans",
+    variants: ["table", "cards", "toggle"]
+  },
+];
 
 export interface ComponentType {
   type: string;

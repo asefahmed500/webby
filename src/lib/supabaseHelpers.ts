@@ -36,7 +36,7 @@ export const saveWebsiteToSupabase = async (website: Website): Promise<boolean> 
           pages: website.pages,
           updated_at: website.updatedAt,
           published_at: website.publishedAt,
-          publish_status: website.publishStatus
+          publish_status: website.publishStatus || "draft"
         })
         .eq('id', website.id);
       
@@ -61,7 +61,7 @@ export const saveWebsiteToSupabase = async (website: Website): Promise<boolean> 
             updated_at: website.updatedAt,
             published_at: website.publishedAt,
             user_id: website.userId,
-            publish_status: website.publishStatus
+            publish_status: website.publishStatus || "draft"
           }
         ]);
       
@@ -94,7 +94,7 @@ export const getUserWebsites = async (userId: string) => {
       return [];
     }
     
-    return data;
+    return data || [];
   } catch (error) {
     console.error("Error in getUserWebsites:", error);
     return [];
@@ -146,7 +146,11 @@ export const publishWebsite = async (website: Website) => {
 // Function to check if Supabase is available
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.from('websites').select('count').limit(1);
+    const { data, error } = await supabase
+      .from('websites')
+      .select('count')
+      .limit(1);
+    
     return !error;
   } catch (error) {
     console.error("Error checking Supabase connection:", error);

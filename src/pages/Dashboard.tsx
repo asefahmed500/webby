@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -46,10 +45,10 @@ export default function Dashboard() {
           
           if (data && data.length > 0) {
             setWebsites(data.map(site => ({
-              id: site.id,
-              name: site.name,
-              created_at: site.created_at,
-              pages: site.pages?.length || 0,
+              id: site.id || '',
+              name: site.name || 'Unnamed Website',
+              created_at: site.created_at || new Date().toISOString(),
+              pages: (site.pages && Array.isArray(site.pages)) ? site.pages.length : 0,
               status: site.publish_status || "draft"
             })));
             return;
