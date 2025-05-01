@@ -106,13 +106,14 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
   const [canRedo, setCanRedo] = useState(false);
   
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const [updateTimeout, setUpdateTimeout] = useState<NodeJS.Timeout | null>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const shouldUpdateHistoryRef = useRef<boolean>(true);
 
   const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
 
+  // Initialize history when all data is loaded
   useEffect(() => {
-    if (initialLoadDone) {
+    if (initialLoadDone && shouldUpdateHistoryRef.current) {
       const initialState: HistoryState = {
         pages,
         currentPageId,
@@ -120,9 +121,11 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       };
       setHistory([initialState]);
       setHistoryIndex(0);
+      shouldUpdateHistoryRef.current = false;
     }
-  }, [initialLoadDone]);
+  }, [initialLoadDone, pages, currentPageId, components]);
 
+  // Update canUndo and canRedo states
   useEffect(() => {
     setCanUndo(historyIndex > 0);
     setCanRedo(historyIndex < history.length - 1);
@@ -133,10 +136,16 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       const newIndex = historyIndex - 1;
       const previousState = history[newIndex];
       
+      shouldUpdateHistoryRef.current = false;
+      
       setPages(previousState.pages);
       setCurrentPageId(previousState.currentPageId);
       setComponents(previousState.components);
       setHistoryIndex(newIndex);
+      
+      setTimeout(() => {
+        shouldUpdateHistoryRef.current = true;
+      }, 100);
     }
   }, [history, historyIndex]);
 
@@ -145,13 +154,20 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       const newIndex = historyIndex + 1;
       const nextState = history[newIndex];
       
+      shouldUpdateHistoryRef.current = false;
+      
       setPages(nextState.pages);
       setCurrentPageId(nextState.currentPageId);
       setComponents(nextState.components);
       setHistoryIndex(newIndex);
+      
+      setTimeout(() => {
+        shouldUpdateHistoryRef.current = true;
+      }, 100);
     }
   }, [history, historyIndex]);
 
+  // Keyboard shortcuts for undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
@@ -173,7 +189,10 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [undoChange, redoChange]);
 
+  // Add to history with debouncing
   const addToHistory = useCallback((state: HistoryState) => {
+    if (!shouldUpdateHistoryRef.current) return;
+    
     setHistory(prevHistory => {
       const newHistory = prevHistory.slice(0, historyIndex + 1);
       const updatedHistory = [...newHistory, state];
@@ -189,6 +208,7 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     });
   }, [historyIndex]);
 
+  // Load saved website data
   useEffect(() => {
     try {
       const savedData = localStorage.getItem("saved-website");
@@ -259,6 +279,7 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
+  // Check published status on load
   useEffect(() => {
     if (!initialLoadDone) return;
     
@@ -275,6 +296,7 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [initialLoadDone]);
 
+  // Load components for current page
   useEffect(() => {
     if (!initialLoadDone) return;
     
@@ -282,14 +304,21 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     if (currentPage) {
       console.log("Setting components from current page:", currentPage.id, currentPage.components?.length || 0);
       
+      shouldUpdateHistoryRef.current = false;
+      
       const componentsCopy = currentPage.components ? 
         JSON.parse(JSON.stringify(currentPage.components)) : [];
         
       setComponents(componentsCopy);
       setSelectedComponent(null);
+      
+      setTimeout(() => {
+        shouldUpdateHistoryRef.current = true;
+      }, 100);
     }
   }, [currentPageId, pages, initialLoadDone]);
 
+  // Auto-save functionality
   useEffect(() => {
     if (!initialLoadDone) return;
     
@@ -320,43 +349,43 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [components, pages, currentPageId, websiteName, initialLoadDone]);
 
+  // Update page components with debouncing
   const updatePageComponents = useCallback(() => {
     if (!initialLoadDone) return;
     
-    if (updateTimeout) {
-      clearTimeout(updateTimeout);
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
     
-    const timeoutId = setTimeout(() => {
+    updateTimeoutRef.current = setTimeout(() => {
       setPages(prevPages => {
         const updatedPages = prevPages.map(page => 
           page.id === currentPageId ? { ...page, components } : page
         );
         
-        addToHistory({
-          pages: updatedPages,
-          currentPageId,
-          components
-        });
+        if (shouldUpdateHistoryRef.current) {
+          addToHistory({
+            pages: updatedPages,
+            currentPageId,
+            components
+          });
+        }
         
         return updatedPages;
       });
     }, 300);
-    
-    setUpdateTimeout(timeoutId as unknown as NodeJS.Timeout);
-    
-  }, [components, currentPageId, initialLoadDone, updateTimeout, addToHistory]);
+  }, [components, currentPageId, initialLoadDone, addToHistory]);
   
   useEffect(() => {
     if (!initialLoadDone) return;
     updatePageComponents();
     
     return () => {
-      if (updateTimeout) {
-        clearTimeout(updateTimeout);
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
     };
-  }, [components, updatePageComponents, initialLoadDone, updateTimeout]);
+  }, [components, updatePageComponents, initialLoadDone]);
 
   const saveWebsite = async () => {
     try {

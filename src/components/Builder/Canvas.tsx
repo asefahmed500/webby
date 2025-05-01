@@ -6,7 +6,7 @@ import DraggableComponent from "./DraggableComponent";
 import { cn } from "@/lib/utils";
 import { templates } from "@/lib/componentData";
 import { Button } from "@/components/ui/button";
-import { Home, User, Smartphone, Tablet, Monitor } from "lucide-react";
+import { Home, User, Smartphone, Tablet, Monitor, Plus } from "lucide-react";
 
 const Canvas = () => {
   const { 
@@ -133,19 +133,19 @@ const Canvas = () => {
   const viewportClass = useMemo(() => {
     switch (viewportSize) {
       case 'mobile':
-        return 'max-w-[375px] mx-auto border-x shadow-sm';
+        return 'max-w-[375px] mx-auto border-x shadow-sm h-[80vh] overflow-auto';
       case 'tablet':
-        return 'max-w-[768px] mx-auto border-x shadow-sm';
+        return 'max-w-[768px] mx-auto border-x shadow-sm h-[80vh] overflow-auto';
       default:
-        return 'w-full';
+        return 'w-full h-[80vh] overflow-auto';
     }
   }, [viewportSize]);
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Add navbar */}
       {!previewMode && (
-        <div className="h-14 border-b border-gray-200 bg-white/80 backdrop-blur-sm px-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div className="h-14 border-b border-gray-200 bg-white backdrop-blur-sm px-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link to="/">
               <Button variant="ghost" size="sm" className="transition-colors hover:bg-gray-100">
@@ -172,6 +172,7 @@ const Canvas = () => {
                 size="sm" 
                 className="rounded-none px-2" 
                 onClick={() => setViewportSize("mobile")}
+                title="Mobile view"
               >
                 <Smartphone className="h-4 w-4" />
               </Button>
@@ -180,6 +181,7 @@ const Canvas = () => {
                 size="sm" 
                 className="rounded-none px-2" 
                 onClick={() => setViewportSize("tablet")}
+                title="Tablet view"
               >
                 <Tablet className="h-4 w-4" />
               </Button>
@@ -188,6 +190,7 @@ const Canvas = () => {
                 size="sm" 
                 className="rounded-none px-2" 
                 onClick={() => setViewportSize("desktop")}
+                title="Desktop view"
               >
                 <Monitor className="h-4 w-4" />
               </Button>
@@ -198,33 +201,48 @@ const Canvas = () => {
       
       <div 
         className={cn(
-          "flex-1 overflow-auto",
-          previewMode ? "bg-white" : "bg-gray-50"
+          "flex-1 bg-gray-100 p-6",
+          previewMode ? "bg-white" : "bg-gray-100"
         )}
         onClick={handleCanvasClick}
       >
         <div
           className={cn(
-            "min-h-full p-8 transition-all duration-300",
+            "bg-white min-h-full transition-all duration-300 mx-auto",
             viewportClass,
-            previewMode ? "" : "shadow-sm"
+            previewMode ? "" : "shadow-lg rounded-md"
           )}
           onDragOver={handleDragOver}
           onDrop={!previewMode ? handleDrop : undefined}
           onDragStart={(e) => draggedComponent && handleCanvasDragStart(e, draggedComponent)}
         >
           {components.length === 0 && !previewMode ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-fade-in">
-              <p className="mb-2">Drag and drop components here</p>
-              <p className="text-sm">or select a template from the sidebar</p>
+            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+              <div className="bg-blue-50 border-2 border-dashed border-blue-200 rounded-lg p-12 text-center max-w-md">
+                <div className="mx-auto bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                  <Plus className="h-8 w-8 text-blue-500" />
+                </div>
+                <p className="text-lg font-medium text-gray-700 mb-2">Your canvas is empty</p>
+                <p className="mb-6 text-gray-500">Drag and drop components from the sidebar to start building your website</p>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white"
+                  onClick={() => addComponent('container')}
+                >
+                  Add a Container
+                </Button>
+              </div>
             </div>
           ) : (
-            memoizedComponents.map((component) => (
-              <DraggableComponent 
-                key={component.id} 
-                component={component} 
-              />
-            ))
+            <div className="p-4">
+              {memoizedComponents.map((component) => (
+                <DraggableComponent 
+                  key={component.id} 
+                  component={component} 
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -242,7 +260,7 @@ const Canvas = () => {
           <div className="text-xs font-medium">{dragPreview.type}</div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

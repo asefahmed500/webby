@@ -4,6 +4,7 @@ import { useBuilder, Component } from "@/context/BuilderContext";
 import { cn } from "@/lib/utils";
 import { calculateGuidelines, springAnimate, applyShimmerEffect } from "@/lib/animationUtils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Trash, Move, Copy, ChevronDown, ChevronUp } from "lucide-react";
 
 interface DraggableComponentProps {
   component: Component;
@@ -35,6 +36,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   const [guidelines, setGuidelines] = useState<{ position: number; type: 'horizontal' | 'vertical'; strength: number; }[]>([]);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [isDraggingSelf, setIsDraggingSelf] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   // Use memoization to prevent unnecessary re-renders
   const memoizedChildren = useMemo(() => component.children, [component.children]);
@@ -206,6 +208,36 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     }
   }, [dragStartPos, isPreview]);
 
+  // Handle component duplication
+  const handleDuplicate = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Create a deep copy of the component
+    const componentCopy = JSON.parse(JSON.stringify(component));
+    componentCopy.id = `component-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // If the component has children, generate new IDs for them
+    const generateNewIds = (comp: Component): Component => {
+      return {
+        ...comp,
+        id: `component-${Math.random().toString(36).substr(2, 9)}`,
+        children: comp.children.map(generateNewIds)
+      };
+    };
+    
+    const newComponent = generateNewIds(componentCopy);
+    
+    // Add the new component to the parent's children or to the root level
+    const parentId = null; // In a real implementation, you'd track parent IDs
+    if (parentId) {
+      // Add to parent's children
+      // This would require tracking parent-child relationships
+    } else {
+      // Add to root level
+      addComponent(newComponent.type);
+    }
+  }, [component, addComponent]);
+
   const renderComponentContent = () => {
     if (isLoading) {
       return <Skeleton className="w-full h-20" />;
@@ -236,7 +268,9 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
             ))}
             {!isPreview && memoizedChildren.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                Drop components here
+                <div className="bg-gray-50 p-4 rounded-md border border-dashed border-gray-300">
+                  Drop components here
+                </div>
               </div>
             )}
           </div>
@@ -308,6 +342,50 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     }
   };
 
+  // Component toolbar with actions
+  const ComponentToolbar = () => {
+    if (isPreview || !isSelected) return null;
+    
+    return (
+      <div className="absolute -top-8 right-0 bg-white rounded-t-md shadow-md flex z-10">
+        <button
+          className="p-1 hover:bg-gray-100 text-gray-700 rounded-tl-md"
+          title="Duplicate"
+          onClick={handleDuplicate}
+        >
+          <Copy size={14} />
+        </button>
+        <button 
+          className="p-1 hover:bg-gray-100 text-gray-700"
+          title="Move"
+        >
+          <Move size={14} />
+        </button>
+        <button 
+          className="p-1 hover:bg-red-100 text-red-500 rounded-tr-md"
+          title="Delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeComponent(component.id);
+          }}
+        >
+          <Trash size={14} />
+        </button>
+      </div>
+    );
+  };
+
+  // Component label
+  const ComponentLabel = () => {
+    if (isPreview) return null;
+    
+    return (
+      <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-t-md z-10">
+        {component.type}
+      </div>
+    );
+  };
+
   // Optimize selection UI render
   const selectionClasses = useMemo(() => {
     if (isPreview) return "";
@@ -323,9 +401,10 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
     <div
       ref={componentRef}
       className={cn(
-        "relative",
+        "relative mb-3",
         selectionClasses,
-        !isPreview && "hover:outline hover:outline-1 hover:outline-gray-300"
+        !isPreview && "hover:outline hover:outline-1 hover:outline-gray-300",
+        !isPreview && hovered && "shadow-sm"
       )}
       onClick={!isPreview ? handleClick : undefined}
       onDragOver={!isPreview ? handleDragOver : undefined}
@@ -336,7 +415,12 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       onDragEnd={!isPreview ? handleDragEnd : undefined}
       draggable={!isPreview}
       data-component-id={component.id}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
+      {isSelected && <ComponentToolbar />}
+      {hovered && !isPreview && <ComponentLabel />}
+      
       {renderComponentContent()}
       
       {/* Guidelines */}

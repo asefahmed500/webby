@@ -201,6 +201,87 @@
   animation: fadeInUp 0.3s ease forwards;
 }
 
+/* Smoother transitions for components */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.component-enter {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Canvas animation */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.canvas-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Dashboard grid animation */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-gap: 1.5rem;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: gridAppear 0.6s ease-out forwards;
+}
+
+@keyframes gridAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-grid > * {
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.dashboard-grid > *:nth-child(1) { animation: itemAppear 0.4s ease-out 0.1s forwards; }
+.dashboard-grid > *:nth-child(2) { animation: itemAppear 0.4s ease-out 0.15s forwards; }
+.dashboard-grid > *:nth-child(3) { animation: itemAppear 0.4s ease-out 0.2s forwards; }
+.dashboard-grid > *:nth-child(4) { animation: itemAppear 0.4s ease-out 0.25s forwards; }
+.dashboard-grid > *:nth-child(5) { animation: itemAppear 0.4s ease-out 0.3s forwards; }
+.dashboard-grid > *:nth-child(6) { animation: itemAppear 0.4s ease-out 0.35s forwards; }
+
+@keyframes itemAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Builder toolbar animations */
+.builder-toolbar {
+  @apply bg-white border-b shadow-sm;
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: toolbarAppear 0.3s ease-out forwards;
+}
+
+@keyframes toolbarAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -218,4 +299,11 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Component drop highlight */
+.drop-highlight {
+  outline: 2px dashed #3b82f6;
+  outline-offset: 2px;
+  transition: outline 0.2s ease;
 }
