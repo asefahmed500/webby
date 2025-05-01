@@ -5,6 +5,7 @@ import { useBuilder } from "@/context/BuilderContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { publishWebsite } from "@/lib/supabaseHelpers";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import { Globe, Check, ExternalLink, Loader2 } from "lucide-react";
 
 const PublishControl = () => {
   const { user } = useAuth();
-  const { publishStatus, setPublishStatus, pages, websiteName, saveWebsite, currentPageId } = useBuilder();
+  const { publishStatus, setPublishStatus, pages, websiteName, saveWebsite, currentPageId, websiteId } = useBuilder();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [publishProgress, setPublishProgress] = useState(0);
@@ -60,6 +61,7 @@ const PublishControl = () => {
       
       // Then prepare the published version data
       const websiteData = {
+        ...parsedData,
         pages: parsedData.pages || [],
         publishedAt: new Date().toISOString(),
         userId: user.id,
@@ -71,8 +73,8 @@ const PublishControl = () => {
       console.log("Publishing website data:", JSON.stringify(websiteData));
       setPublishProgress(80);
       
-      // Save the published version
-      localStorage.setItem("published-website", JSON.stringify(websiteData));
+      // Save to Supabase and localStorage
+      await publishWebsite(websiteData);
       
       // Update publish status
       setPublishStatus("published");

@@ -73,7 +73,7 @@ const LandingPage = ({ onStartBuilding }: { onStartBuilding: () => void }) => {
               Build Stunning Websites<br />Without Code
             </h1>
             <p className="text-xl md:text-2xl mb-10 max-w-3xl mx-auto opacity-90">
-              Choose from professionally designed templates and create beautiful, responsive websites with our intuitive drag-and-drop builder.
+              Choose from professionally designed templates and create beautiful, responsive websites with our intuitive Webby builder.
             </p>
             <div className="space-x-4">
               <Button 
@@ -266,7 +266,7 @@ const LandingPage = ({ onStartBuilding }: { onStartBuilding: () => void }) => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="mb-6 md:mb-0">
-              <h2 className="text-2xl font-bold mb-4">Website Builder</h2>
+              <h2 className="text-2xl font-bold mb-4">Webby</h2>
               <p className="text-gray-400 max-w-xs">
                 Create beautiful websites without any coding knowledge
               </p>
@@ -304,7 +304,7 @@ const LandingPage = ({ onStartBuilding }: { onStartBuilding: () => void }) => {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} Website Builder. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Webby. All rights reserved.</p>
           </div>
         </div>
       </footer>

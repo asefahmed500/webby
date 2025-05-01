@@ -1,10 +1,12 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo, useRef } from "react";
-import { defaultPages, Page } from "@/lib/pageData";
+import { defaultPages, Page, defaultWebsite, Website } from "@/lib/pageData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { SEOSettings as SEOSettingsType, defaultSEOSettings } from '@/lib/seoUtils';
 import { storageService } from '@/lib/supabaseServices';
+import { saveWebsiteToSupabase } from "@/lib/supabaseHelpers";
 
 export interface Component {
   id: string;
@@ -208,76 +210,146 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
     });
   }, [historyIndex]);
 
-  // Load saved website data
+  // Check if user is logged in and try loading from Supabase first
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem("saved-website");
-      const publishedData = localStorage.getItem("published-website");
+    const loadDataFromSupabase = async () => {
+      if (!user?.id) return false;
       
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.pages) {
-          console.log("Loading pages from saved data:", parsedData.pages.length);
-          setPages(parsedData.pages);
-          
-          if (parsedData.publishStatus) {
-            setPublishStatus(parsedData.publishStatus);
-          }
-          
-          if (parsedData.websiteId) {
-            setWebsiteId(parsedData.websiteId);
-          }
-          
-          if (parsedData.websiteName) {
-            setWebsiteName(parsedData.websiteName);
-          }
-          
-          if (parsedData.seoSettings) {
-            setSEOSettings(parsedData.seoSettings);
-          }
-          
-          if (parsedData.currentPageId) {
-            setCurrentPageId(parsedData.currentPageId);
-          } else {
-            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-            if (homePage) {
-              setCurrentPageId(homePage.id);
-            }
-          }
+      try {
+        // Try to get the latest website for this user
+        const { data, error } = await supabase
+          .from('websites')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error || !data) {
+          console.log("No data found in Supabase, will try localStorage");
+          return false;
         }
-      } else if (publishedData) {
-        const parsedData = JSON.parse(publishedData);
-        if (parsedData.pages) {
-          console.log("No saved data, using published data");
-          setPages(parsedData.pages);
-          setPublishStatus("published");
-          
-          if (parsedData.websiteName) {
-            setWebsiteName(parsedData.websiteName);
-          }
-          
-          if (parsedData.seoSettings) {
-            setSEOSettings(parsedData.seoSettings);
-          }
-          
-          if (parsedData.currentPageId) {
-            setCurrentPageId(parsedData.currentPageId);
-          } else {
-            const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-            if (homePage) {
-              setCurrentPageId(homePage.id);
-            }
-          }
+        
+        console.log("Found website data in Supabase:", data);
+        
+        // Transform Supabase data to the expected format
+        const websiteData = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          pages: data.pages || defaultPages,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          publishedAt: data.published_at,
+          userId: data.user_id,
+          publishStatus: data.publish_status || "draft",
+          seoSettings: data.seo_settings || null
+        };
+        
+        // Update local storage with the latest data from Supabase
+        localStorage.setItem("saved-website", JSON.stringify(websiteData));
+        
+        // Update state
+        setPages(websiteData.pages);
+        setPublishStatus(websiteData.publishStatus);
+        setWebsiteId(websiteData.id);
+        setWebsiteName(websiteData.name || "My Website");
+        
+        if (websiteData.seoSettings) {
+          setSEOSettings(websiteData.seoSettings);
         }
+        
+        const homePage = websiteData.pages.find(p => p.isHome) || websiteData.pages[0];
+        if (homePage) {
+          setCurrentPageId(homePage.id);
+        }
+        
+        return true;
+      } catch (error) {
+        console.error("Error loading from Supabase:", error);
+        return false;
       }
-      
-      setInitialLoadDone(true);
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error("Error loading saved website:", error);
-      setInitialLoadDone(true);
+    };
+    
+    // Load saved website data
+    async function loadData() {
+      try {
+        // First try loading from Supabase if user is logged in
+        const loadedFromSupabase = user?.id ? await loadDataFromSupabase() : false;
+        
+        // If not loaded from Supabase, try localStorage
+        if (!loadedFromSupabase) {
+          const savedData = localStorage.getItem("saved-website");
+          const publishedData = localStorage.getItem("published-website");
+          
+          if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData.pages) {
+              console.log("Loading pages from saved data:", parsedData.pages.length);
+              setPages(parsedData.pages);
+              
+              if (parsedData.publishStatus) {
+                setPublishStatus(parsedData.publishStatus);
+              }
+              
+              if (parsedData.websiteId) {
+                setWebsiteId(parsedData.websiteId);
+              }
+              
+              if (parsedData.websiteName) {
+                setWebsiteName(parsedData.websiteName);
+              }
+              
+              if (parsedData.seoSettings) {
+                setSEOSettings(parsedData.seoSettings);
+              }
+              
+              if (parsedData.currentPageId) {
+                setCurrentPageId(parsedData.currentPageId);
+              } else {
+                const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+                if (homePage) {
+                  setCurrentPageId(homePage.id);
+                }
+              }
+            }
+          } else if (publishedData) {
+            const parsedData = JSON.parse(publishedData);
+            if (parsedData.pages) {
+              console.log("No saved data, using published data");
+              setPages(parsedData.pages);
+              setPublishStatus("published");
+              
+              if (parsedData.websiteName) {
+                setWebsiteName(parsedData.websiteName);
+              }
+              
+              if (parsedData.seoSettings) {
+                setSEOSettings(parsedData.seoSettings);
+              }
+              
+              if (parsedData.currentPageId) {
+                setCurrentPageId(parsedData.currentPageId);
+              } else {
+                const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
+                if (homePage) {
+                  setCurrentPageId(homePage.id);
+                }
+              }
+            }
+          }
+        }
+        
+        setInitialLoadDone(true);
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error("Error loading saved website:", error);
+        setInitialLoadDone(true);
+      }
     }
-  }, []);
+    
+    loadData();
+  }, [user]);
 
   // Check published status on load
   useEffect(() => {
@@ -396,27 +468,39 @@ export const BuilderProvider: React.FC<{ children: ReactNode }> = ({
       );
       
       const websiteData = {
+        ...defaultWebsite,
+        id: websiteId || `website-${Math.random().toString(36).substr(2, 9)}`,
+        name: websiteName,
         pages: updatedPages,
-        publishStatus,
-        websiteId: websiteId || `website-${Math.random().toString(36).substr(2, 9)}`,
-        websiteName,
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         userId: user?.id,
         currentPageId,
-        seoSettings // <-- Add SEO settings to saved data
+        publishStatus,
+        seoSettings
       };
       
       console.log("Saving website data:", JSON.stringify(websiteData));
       localStorage.setItem("saved-website", JSON.stringify(websiteData));
       
       if (!websiteId) {
-        setWebsiteId(websiteData.websiteId);
+        setWebsiteId(websiteData.id);
       }
       
       setPages(updatedPages);
       setLastSaved(new Date());
-      setIsSaving(false);
       
+      // If user is logged in, attempt to save to Supabase
+      if (user?.id) {
+        try {
+          await saveWebsiteToSupabase(websiteData);
+        } catch (supabaseError) {
+          console.error("Error saving to Supabase:", supabaseError);
+          // Continue since we've already saved to localStorage
+        }
+      }
+      
+      setIsSaving(false);
       return Promise.resolve();
     } catch (error) {
       console.error("Error saving website:", error);

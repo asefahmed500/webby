@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -100,7 +101,7 @@ const Toolbar = () => {
   return (
     <div className="h-14 border-b border-gray-200 bg-white px-4 flex items-center justify-between">
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold mr-6">Website Builder</h1>
+        <h1 className="text-lg font-semibold mr-6">Webby</h1>
         
         {!previewMode && (
           <div className="flex items-center space-x-2">

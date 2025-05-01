@@ -1,7 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useBuilder } from "@/context/BuilderContext";
 import { componentTypes, templates } from "@/lib/componentData";
+import { layoutComponents } from "@/lib/layoutComponents"; 
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -33,7 +34,13 @@ import {
   Home,
   CalendarClock,
   Utensils,
-  GraduationCap
+  GraduationCap,
+  Navigation,
+  Layout,
+  Grid,
+  Sidebar as SidebarIcon,
+  ChevronUp,
+  Languages
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -63,7 +70,14 @@ const iconMap: Record<string, React.ReactNode> = {
   "home": <Home className="h-4 w-4" />,
   "calendar": <CalendarClock className="h-4 w-4" />,
   "utensils": <Utensils className="h-4 w-4" />,
-  "graduation-cap": <GraduationCap className="h-4 w-4" />
+  "graduation-cap": <GraduationCap className="h-4 w-4" />,
+  "navigation": <Navigation className="h-4 w-4" />,
+  "layout": <Layout className="h-4 w-4" />,
+  "grid": <Grid className="h-4 w-4" />,
+  "sidebar": <SidebarIcon className="h-4 w-4" />,
+  "chevron-up": <ChevronUp className="h-4 w-4" />,
+  "languages": <Languages className="h-4 w-4" />,
+  "footer": <PanelBottom className="h-4 w-4" />
 };
 
 const ComponentSidebar = () => {
@@ -76,28 +90,48 @@ const ComponentSidebar = () => {
     setDraggedComponent(componentType);
   };
 
+  // Combine all templates for filtering
+  const allTemplates = [...templates, ...layoutComponents];
+
   // Filter templates based on search term
-  const filteredTemplates = templates.filter(template => 
-    template.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTemplates = allTemplates.filter(template => 
+    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (template.description && template.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Get categories for filtering
-  const categories = ["all", ...new Set(templates.map(t => {
-    if (t.id.includes("hero")) return "hero";
-    if (t.id.includes("feature")) return "features";
-    if (t.id.includes("testimonial")) return "testimonials";
-    if (t.id.includes("pricing")) return "pricing";
-    if (t.id.includes("contact")) return "contact";
-    if (t.id.includes("team")) return "team";
-    if (t.id.includes("cta")) return "cta";
-    if (t.id.includes("footer")) return "footer";
-    return "other";
-  }))];
+  // Get unique categories from all templates
+  const getCategories = () => {
+    const categories = ["all"];
+    
+    allTemplates.forEach(template => {
+      const category = template.category || 
+        (template.id.includes("hero") ? "hero" : 
+        template.id.includes("feature") ? "features" :
+        template.id.includes("testimonial") ? "testimonials" :
+        template.id.includes("pricing") ? "pricing" :
+        template.id.includes("contact") ? "contact" :
+        template.id.includes("team") ? "team" :
+        template.id.includes("cta") ? "cta" :
+        template.id.includes("footer") ? "footer" :
+        template.id.includes("navbar") ? "navigation" :
+        template.id.includes("sidebar") ? "sidebar" : "other");
+      
+      if (!categories.includes(category)) {
+        categories.push(category);
+      }
+    });
+    
+    return categories;
+  };
+
+  const categories = getCategories();
 
   // Filter templates by category
   const categoryFilteredTemplates = selectedCategory === "all" 
     ? filteredTemplates 
     : filteredTemplates.filter(t => {
+        if (t.category) return t.category === selectedCategory;
+        
         if (selectedCategory === "hero" && t.id.includes("hero")) return true;
         if (selectedCategory === "features" && t.id.includes("feature")) return true;
         if (selectedCategory === "testimonials" && t.id.includes("testimonial")) return true;
@@ -106,7 +140,12 @@ const ComponentSidebar = () => {
         if (selectedCategory === "team" && t.id.includes("team")) return true;
         if (selectedCategory === "cta" && t.id.includes("cta")) return true;
         if (selectedCategory === "footer" && t.id.includes("footer")) return true;
-        return selectedCategory === "other" && !["hero", "feature", "testimonial", "pricing", "contact", "team", "cta", "footer"].some(cat => t.id.includes(cat));
+        if (selectedCategory === "navigation" && t.id.includes("navbar")) return true;
+        if (selectedCategory === "sidebar" && t.id.includes("sidebar")) return true;
+        
+        return selectedCategory === "other" && !["hero", "feature", "testimonial", "pricing", "contact", "team", "cta", "footer", "navbar", "sidebar"].some(cat => 
+          t.id.includes(cat)
+        );
       });
 
   return (
@@ -194,6 +233,9 @@ const ComponentSidebar = () => {
                     {iconMap[template.thumbnail] || <div className="h-10 w-10" />}
                   </div>
                   <h3 className="text-sm font-medium">{template.name}</h3>
+                  {template.description && (
+                    <p className="text-xs text-gray-500 mt-1">{template.description}</p>
+                  )}
                 </div>
               ))}
             </div>

@@ -34,23 +34,49 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      // In a real app, this would fetch websites from Supabase
-      // For now, we'll use localStorage and simulate storing by user ID
-      try {
-        const savedData = localStorage.getItem("saved-website");
-        if (savedData) {
-          const data = JSON.parse(savedData);
-          setWebsites([{
-            id: "1",
-            name: data.websiteName || "My Website",
-            created_at: new Date().toISOString(),
-            pages: data.pages?.length || 0,
-            status: data.publishStatus || "draft"
-          }]);
+      // First try to get websites from Supabase
+      const fetchWebsites = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('websites')
+            .select('*')
+            .eq('user_id', user.id);
+            
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            setWebsites(data.map(site => ({
+              id: site.id,
+              name: site.name,
+              created_at: site.created_at,
+              pages: site.pages?.length || 0,
+              status: site.publish_status || "draft"
+            })));
+            return;
+          }
+        } catch (error) {
+          console.error("Error fetching from Supabase:", error);
         }
-      } catch (error) {
-        console.error("Error loading websites:", error);
-      }
+        
+        // Fallback to localStorage
+        try {
+          const savedData = localStorage.getItem("saved-website");
+          if (savedData) {
+            const data = JSON.parse(savedData);
+            setWebsites([{
+              id: data.websiteId || "1",
+              name: data.websiteName || "My Website",
+              created_at: data.createdAt || new Date().toISOString(),
+              pages: data.pages?.length || 0,
+              status: data.publishStatus || "draft"
+            }]);
+          }
+        } catch (error) {
+          console.error("Error loading websites from localStorage:", error);
+        }
+      };
+      
+      fetchWebsites();
       setLoading(false);
     }
   }, [user]);
@@ -63,9 +89,25 @@ export default function Dashboard() {
     navigate("/");
   };
 
-  const handleDeleteWebsite = () => {
+  const handleDeleteWebsite = async () => {
     if (confirm("Are you sure you want to delete this website?")) {
+      try {
+        // Try to delete from Supabase first
+        if (user) {
+          const { error } = await supabase
+            .from('websites')
+            .delete()
+            .eq('user_id', user.id);
+            
+          if (error) throw error;
+        }
+      } catch (error) {
+        console.error("Error deleting from Supabase:", error);
+      }
+      
+      // Delete from localStorage as fallback
       localStorage.removeItem("saved-website");
+      localStorage.removeItem("published-website");
       setWebsites([]);
       toast.success("Website deleted successfully");
     }
@@ -85,7 +127,7 @@ export default function Dashboard() {
       
       <main className="container mx-auto px-4 py-8 flex-1">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Website Dashboard</h1>
+          <h1 className="text-2xl font-bold">Webby Dashboard</h1>
           <p className="text-gray-600">Manage your websites and templates</p>
         </div>
         
