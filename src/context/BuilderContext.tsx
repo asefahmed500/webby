@@ -44,17 +44,26 @@ interface Website {
   publishStatus: 'draft' | 'published';
 }
 
+export interface SEOSettings {
+  title: string;
+  description: string;
+  keywords: string;
+  favicon?: string;
+  ogImage?: string;
+  author?: string;
+}
+
 // Rest of the BuilderContext implementation
 // Update functions to use the Component type instead of string
 
 interface BuilderContextType {
   components: Component[];
-  setComponents: (components: Component[]) => void;
-  selectedComponent: string | null;
-  setSelectedComponent: (id: string | null) => void;
+  setComponents: React.Dispatch<React.SetStateAction<Component[]>>;
+  selectedComponent: Component | null;
+  setSelectedComponent: (id: Component | null) => void;
   draggedComponent: string | null;
   setDraggedComponent: (type: string | null) => void;
-  addComponent: (type: string) => void;
+  addComponent: (type: string, parentId?: string) => void;
   updateComponent: (id: string, data: Partial<Component>) => void;
   duplicateComponent: (id: string) => void;
   removeComponent: (id: string) => void;
@@ -65,6 +74,7 @@ interface BuilderContextType {
   setViewportSize: (size: 'mobile' | 'tablet' | 'desktop') => void;
   isEditing: boolean;
   setIsEditing: (editing: boolean) => void;
+  isDragging: boolean;
   pages: Page[];
   setPages: React.Dispatch<React.SetStateAction<Page[]>>;
   currentPageId: string;
@@ -78,6 +88,13 @@ interface BuilderContextType {
   isSaving: boolean;
   setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
   saveWebsite: () => Promise<void>;
+  websiteName: string;
+  setWebsiteName: (name: string) => void;
+  publishStatus: 'draft' | 'published';
+  setPublishStatus: (status: 'draft' | 'published') => void;
+  websiteId: string;
+  seoSettings: SEOSettings | null;
+  setSEOSettings: React.Dispatch<React.SetStateAction<SEOSettings | null>>;
 }
 
 // Create context
@@ -85,7 +102,7 @@ const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 
 // Default website structure
 const defaultWebsite: Website = {
-  id: "",
+  id: uuidv4(),
   name: "My Website",
   description: "A website built with Webby",
   pages: [
@@ -107,18 +124,31 @@ const defaultWebsite: Website = {
   publishStatus: 'draft'
 };
 
+// Default SEO settings
+const defaultSEOSettings: SEOSettings = {
+  title: "My Website",
+  description: "A website built with Webby",
+  keywords: "website, web, builder",
+  author: ""
+};
+
 export const BuilderProvider = ({ children }: { children: ReactNode }) => {
   const [components, setComponents] = useState<Component[]>([]);
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [isEditing, setIsEditing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [pages, setPages] = useState<Page[]>(defaultWebsite.pages);
   const [currentPageId, setCurrentPageId] = useState<string>(defaultWebsite.pages[0].id);
   const [website, setWebsite] = useState<Website>(defaultWebsite);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [websiteName, setWebsiteName] = useState<string>(defaultWebsite.name);
+  const [publishStatus, setPublishStatus] = useState<'draft' | 'published'>(defaultWebsite.publishStatus);
+  const [websiteId, setWebsiteId] = useState<string>(defaultWebsite.id);
+  const [seoSettings, setSEOSettings] = useState<SEOSettings | null>(defaultSEOSettings);
   
   const { user } = useAuth();
   const { toast: uiToast } = useToast();
@@ -132,6 +162,9 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
         const parsedWebsite = JSON.parse(savedWebsite) as Website;
         setWebsite(parsedWebsite);
         setPages(parsedWebsite.pages);
+        setWebsiteName(parsedWebsite.name || "My Website");
+        setPublishStatus(parsedWebsite.publishStatus || 'draft');
+        setWebsiteId(parsedWebsite.id || uuidv4());
         
         // Set current page to home or first page
         const homePage = parsedWebsite.pages.find(p => p.isHome);
@@ -207,7 +240,7 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
   }, [components, currentPageId]);
   
   // Function to add a component
-  const addComponent = (type: string) => {
+  const addComponent = (type: string, parentId?: string) => {
     const newComponent: Component = {
       id: `component-${uuidv4()}`,
       type,
@@ -218,67 +251,145 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
       styles: {}
     };
     
-    setComponents(prev => [...prev, newComponent]);
+    if (parentId) {
+      // Add to parent component's children
+      setComponents(prev => {
+        const updatedComponents = [...prev];
+        const findAndUpdateParent = (components: Component[]): Component[] => {
+          return components.map(comp => {
+            if (comp.id === parentId) {
+              return {
+                ...comp,
+                children: [...(comp.children || []), newComponent]
+              };
+            } else if (comp.children && comp.children.length > 0) {
+              return {
+                ...comp,
+                children: findAndUpdateParent(comp.children)
+              };
+            }
+            return comp;
+          });
+        };
+        return findAndUpdateParent(updatedComponents);
+      });
+    } else {
+      // Add to root level
+      setComponents(prev => [...prev, newComponent]);
+    }
   };
   
   // Function to update a component
   const updateComponent = (id: string, data: Partial<Component>) => {
-    setComponents(prev => 
-      prev.map(component => 
-        component.id === id ? { ...component, ...data } : component
-      )
-    );
+    setComponents(prev => {
+      const updateComponentInTree = (components: Component[]): Component[] => {
+        return components.map(comp => {
+          if (comp.id === id) {
+            return { ...comp, ...data };
+          } else if (comp.children && comp.children.length > 0) {
+            return {
+              ...comp,
+              children: updateComponentInTree(comp.children)
+            };
+          }
+          return comp;
+        });
+      };
+      
+      return updateComponentInTree(prev);
+    });
   };
   
   // Function to duplicate a component
   const duplicateComponent = (id: string) => {
-    const componentToDuplicate = components.find(c => c.id === id);
+    const findComponentById = (components: Component[], id: string): Component | null => {
+      for (const comp of components) {
+        if (comp.id === id) return comp;
+        if (comp.children && comp.children.length > 0) {
+          const found = findComponentById(comp.children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const componentToDuplicate = findComponentById(components, id);
     
     if (componentToDuplicate) {
-      const duplicatedComponent: Component = {
-        ...JSON.parse(JSON.stringify(componentToDuplicate)),
-        id: `component-${uuidv4()}`
+      const duplicateWithNewIds = (component: Component): Component => {
+        return {
+          ...JSON.parse(JSON.stringify(component)),
+          id: `component-${uuidv4()}`,
+          children: (component.children || []).map(duplicateWithNewIds)
+        };
       };
       
+      const duplicatedComponent = duplicateWithNewIds(componentToDuplicate);
       setComponents(prev => [...prev, duplicatedComponent]);
     }
   };
   
   // Function to remove a component
   const removeComponent = (id: string) => {
-    setComponents(prev => prev.filter(component => component.id !== id));
-    if (selectedComponent === id) {
+    const removeComponentFromTree = (components: Component[]): Component[] => {
+      return components.filter(comp => {
+        if (comp.id === id) return false;
+        if (comp.children && comp.children.length > 0) {
+          comp.children = removeComponentFromTree(comp.children);
+        }
+        return true;
+      });
+    };
+    
+    setComponents(prev => removeComponentFromTree(prev));
+    
+    if (selectedComponent && selectedComponent.id === id) {
       setSelectedComponent(null);
     }
   };
   
   // Function to move a component up or down
   const moveComponent = (id: string, direction: 'up' | 'down') => {
-    const index = components.findIndex(component => component.id === id);
-    
-    if (index === -1) return;
-    
-    const newComponents = [...components];
-    
-    if (direction === 'up' && index > 0) {
-      [newComponents[index - 1], newComponents[index]] = [newComponents[index], newComponents[index - 1]];
-    } else if (direction === 'down' && index < components.length - 1) {
-      [newComponents[index], newComponents[index + 1]] = [newComponents[index + 1], newComponents[index]];
-    }
-    
-    setComponents(newComponents);
+    setComponents(prev => {
+      const moveComponentInTree = (components: Component[]): Component[] => {
+        const index = components.findIndex(comp => comp.id === id);
+        
+        if (index === -1) {
+          // Check children
+          return components.map(comp => {
+            if (comp.children && comp.children.length > 0) {
+              return { ...comp, children: moveComponentInTree(comp.children) };
+            }
+            return comp;
+          });
+        }
+        
+        const result = [...components];
+        
+        if (direction === 'up' && index > 0) {
+          [result[index - 1], result[index]] = [result[index], result[index - 1]];
+        } else if (direction === 'down' && index < components.length - 1) {
+          [result[index], result[index + 1]] = [result[index + 1], result[index]];
+        }
+        
+        return result;
+      };
+      
+      return moveComponentInTree(prev);
+    });
   };
   
   // Function to add a page
   const addPage = (name: string) => {
+    const newPageId = name.toLowerCase().replace(/\s+/g, '-');
     const newPage: Page = {
-      id: name.toLowerCase().replace(/\s+/g, '-'),
+      id: newPageId,
       name,
-      path: `/${name.toLowerCase().replace(/\s+/g, '-')}`,
+      path: `/${newPageId}`,
       isHome: false,
       components: [],
       seo: {
-        title: `${name} | ${website.name}`,
+        title: `${name} | ${websiteName}`,
         description: "",
         keywords: ""
       }
@@ -319,20 +430,22 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase
         .from('websites')
         .upsert({
-          id: website.id || uuidv4(),
-          name: website.name,
+          id: websiteId || uuidv4(),
+          name: websiteName || "My Website",
           description: website.description,
           pages: website.pages,
           created_at: website.createdAt,
           updated_at: new Date().toISOString(),
-          publish_status: website.publishStatus,
-          user_id: user.id
+          published_at: website.publishedAt,
+          publish_status: publishStatus,
+          user_id: user.id,
+          seo_settings: seoSettings
         });
         
       if (error) throw error;
       
       setLastSaved(new Date());
-      toast.success("Website saved successfully");
+      toast.success("Website saved successfully!");
     } catch (error) {
       console.error("Error saving website:", error);
       toast.error("Failed to save website");
@@ -341,7 +454,7 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const value = {
+  const value: BuilderContextType = {
     components,
     setComponents,
     selectedComponent,
@@ -359,6 +472,7 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
     setViewportSize,
     isEditing,
     setIsEditing,
+    isDragging,
     pages,
     setPages,
     currentPageId,
@@ -371,7 +485,14 @@ export const BuilderProvider = ({ children }: { children: ReactNode }) => {
     setLastSaved,
     isSaving,
     setIsSaving,
-    saveWebsite
+    saveWebsite,
+    websiteName,
+    setWebsiteName,
+    publishStatus,
+    setPublishStatus,
+    websiteId,
+    seoSettings,
+    setSEOSettings
   };
   
   return (

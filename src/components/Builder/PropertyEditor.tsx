@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useBuilder } from "@/context/BuilderContext";
+import { useBuilder, Component } from "@/context/BuilderContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
@@ -116,7 +116,7 @@ const PropertyEditor = () => {
                 This is a container element. Add components to it by dragging them here.
               </p>
               <p className="text-xs text-blue-600">
-                {selectedComponent.children.length} child components
+                {selectedComponent.children ? selectedComponent.children.length : 0} child components
               </p>
             </div>
           );

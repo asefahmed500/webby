@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -158,7 +157,7 @@ const Toolbar = () => {
         {!previewMode && (
           <div className="px-3 py-1.5 bg-gray-100 rounded text-sm text-gray-700 flex items-center">
             <span className="font-medium mr-1">Page:</span> 
-            {currentPage?.name || "Unknown"}
+            {pages.find(page => page.id === currentPageId)?.name || "Unknown"}
           </div>
         )}
         

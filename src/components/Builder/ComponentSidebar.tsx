@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useBuilder } from "@/context/BuilderContext";
-import { componentTypes, templates } from "@/lib/componentData";
+import { componentTypes, componentCategories, templates } from "@/lib/componentData";
 import { layoutTemplates } from "@/lib/layoutComponents"; 
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +42,30 @@ import {
   ChevronUp,
   Languages
 } from "lucide-react";
+
+// Define template types to avoid TypeScript errors
+interface LayoutTemplate {
+  id: string;
+  name: string;
+  icon: React.ForwardRefExoticComponent<any>;
+  description: string;
+}
+
+interface StandardTemplate {
+  id: string;
+  name: string;
+  category?: string;
+  description: string;
+  thumbnail: string;
+  components: any[];
+}
+
+type TemplateItem = StandardTemplate | LayoutTemplate;
+
+// Helper function to check if template has a thumbnail (StandardTemplate)
+const hasStandardTemplateProps = (template: TemplateItem): template is StandardTemplate => {
+  return 'thumbnail' in template && 'category' in template;
+};
 
 const iconMap: Record<string, React.ReactNode> = {
   "panel-right": <PanelRight className="h-4 w-4" />,
@@ -90,7 +115,7 @@ const ComponentSidebar = () => {
   };
 
   // Combine all templates for filtering
-  const allTemplates = [...templates, ...layoutTemplates];
+  const allTemplates: TemplateItem[] = [...templates, ...layoutTemplates as LayoutTemplate[]];
 
   // Filter templates based on search term
   const filteredTemplates = allTemplates.filter(template => 
@@ -103,17 +128,23 @@ const ComponentSidebar = () => {
     const categories = ["all"];
     
     allTemplates.forEach(template => {
-      const category = template.category || 
-        (template.id.includes("hero") ? "hero" : 
-        template.id.includes("feature") ? "features" :
-        template.id.includes("testimonial") ? "testimonials" :
-        template.id.includes("pricing") ? "pricing" :
-        template.id.includes("contact") ? "contact" :
-        template.id.includes("team") ? "team" :
-        template.id.includes("cta") ? "cta" :
-        template.id.includes("footer") ? "footer" :
-        template.id.includes("navbar") ? "navigation" :
-        template.id.includes("sidebar") ? "sidebar" : "other");
+      let category = "other";
+      
+      if (hasStandardTemplateProps(template) && template.category) {
+        category = template.category;
+      } else {
+        // For layout templates without category, infer from ID
+        if (template.id.includes("hero")) category = "hero";
+        else if (template.id.includes("feature")) category = "features";
+        else if (template.id.includes("testimonial")) category = "testimonials";
+        else if (template.id.includes("pricing")) category = "pricing";
+        else if (template.id.includes("contact")) category = "contact";
+        else if (template.id.includes("team")) category = "team";
+        else if (template.id.includes("cta")) category = "cta";
+        else if (template.id.includes("footer")) category = "footer";
+        else if (template.id.includes("navbar")) category = "navigation";
+        else if (template.id.includes("sidebar")) category = "sidebar";
+      }
       
       if (!categories.includes(category)) {
         categories.push(category);
@@ -129,22 +160,26 @@ const ComponentSidebar = () => {
   const categoryFilteredTemplates = selectedCategory === "all" 
     ? filteredTemplates 
     : filteredTemplates.filter(t => {
-        if (t.category) return t.category === selectedCategory;
+        let category = "";
         
-        if (selectedCategory === "hero" && t.id.includes("hero")) return true;
-        if (selectedCategory === "features" && t.id.includes("feature")) return true;
-        if (selectedCategory === "testimonials" && t.id.includes("testimonial")) return true;
-        if (selectedCategory === "pricing" && t.id.includes("pricing")) return true;
-        if (selectedCategory === "contact" && t.id.includes("contact")) return true;
-        if (selectedCategory === "team" && t.id.includes("team")) return true;
-        if (selectedCategory === "cta" && t.id.includes("cta")) return true;
-        if (selectedCategory === "footer" && t.id.includes("footer")) return true;
-        if (selectedCategory === "navigation" && t.id.includes("navbar")) return true;
-        if (selectedCategory === "sidebar" && t.id.includes("sidebar")) return true;
+        if (hasStandardTemplateProps(t) && t.category) {
+          category = t.category;
+        } else {
+          // For layout templates, infer category from ID
+          if (t.id.includes("hero")) category = "hero";
+          else if (t.id.includes("feature")) category = "features";
+          else if (t.id.includes("testimonial")) category = "testimonials";
+          else if (t.id.includes("pricing")) category = "pricing";
+          else if (t.id.includes("contact")) category = "contact";
+          else if (t.id.includes("team")) category = "team";
+          else if (t.id.includes("cta")) category = "cta";
+          else if (t.id.includes("footer")) category = "footer";
+          else if (t.id.includes("navbar")) category = "navigation";
+          else if (t.id.includes("sidebar")) category = "sidebar";
+          else category = "other";
+        }
         
-        return selectedCategory === "other" && !["hero", "feature", "testimonial", "pricing", "contact", "team", "cta", "footer", "navbar", "sidebar"].some(cat => 
-          t.id.includes(cat)
-        );
+        return category === selectedCategory;
       });
 
   return (
@@ -229,7 +264,10 @@ const ComponentSidebar = () => {
                   )}
                 >
                   <div className="bg-gray-100 p-4 rounded-md flex items-center justify-center mb-2">
-                    {iconMap[template.thumbnail] || <div className="h-10 w-10" />}
+                    {hasStandardTemplateProps(template) 
+                      ? (iconMap[template.thumbnail] || <div className="h-10 w-10" />)
+                      : (template.icon && React.createElement(template.icon, { size: 24 }))
+                    }
                   </div>
                   <h3 className="text-sm font-medium">{template.name}</h3>
                   {template.description && (

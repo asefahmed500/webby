@@ -6,10 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { useBuilder } from '@/context/BuilderContext';
-import { SEOSettings as SEOSettingsType, defaultSEOSettings } from '@/lib/seoUtils';
+import { useBuilder, SEOSettings as SEOSettingsType } from '@/context/BuilderContext';
 import { Image, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+
+const defaultSEOSettings: SEOSettingsType = {
+  title: "My Website",
+  description: "A website built with our builder",
+  keywords: "website, web builder, site builder",
+  author: ""
+};
 
 interface SEOSettingsProps {
   onClose?: () => void;

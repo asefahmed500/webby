@@ -1,4 +1,3 @@
-
 import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { useBuilder, Component } from "@/context/BuilderContext";
 import { cn } from "@/lib/utils";
@@ -39,8 +38,8 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   const [hovered, setHovered] = useState(false);
 
   // Use memoization to prevent unnecessary re-renders
-  const memoizedChildren = useMemo(() => component.children, [component.children]);
-  const memoizedStyles = useMemo(() => component.styles, [component.styles]);
+  const memoizedChildren = useMemo(() => component.children || [], [component.children]);
+  const memoizedStyles = useMemo(() => component.styles || {}, [component.styles]);
 
   // Handle keyboard shortcuts for selected component
   useEffect(() => {
@@ -221,7 +220,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       return {
         ...comp,
         id: `component-${Math.random().toString(36).substr(2, 9)}`,
-        children: comp.children.map(generateNewIds)
+        children: comp.children ? comp.children.map(generateNewIds) : []
       };
     };
     
@@ -402,7 +401,9 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       ref={componentRef}
       className={cn(
         "relative mb-3",
-        selectionClasses,
+        isPreview ? "" : (isSelected ? "outline outline-2 outline-blue-500" : ""),
+        isDragging ? "opacity-50" : "",
+        isDraggingSelf ? "opacity-70 shadow-lg" : "",
         !isPreview && "hover:outline hover:outline-1 hover:outline-gray-300",
         !isPreview && hovered && "shadow-sm"
       )}
@@ -419,7 +420,11 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       onMouseLeave={() => setHovered(false)}
     >
       {isSelected && <ComponentToolbar />}
-      {hovered && !isPreview && <ComponentLabel />}
+      {hovered && !isPreview && (
+        <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-t-md z-10">
+          {component.type}
+        </div>
+      )}
       
       {renderComponentContent()}
       

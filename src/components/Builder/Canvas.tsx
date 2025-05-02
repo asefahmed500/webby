@@ -1,6 +1,7 @@
+
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useBuilder } from "@/context/BuilderContext";
+import { useBuilder, Component } from "@/context/BuilderContext";
 import DraggableComponent from "./DraggableComponent";
 import { cn } from "@/lib/utils";
 import { templates } from "@/lib/componentData";
@@ -110,7 +111,10 @@ const Canvas = () => {
       if (template) {
         // Create deep copy of template components to avoid reference issues
         const templateComponentsCopy = JSON.parse(JSON.stringify(template.components));
-        setComponents(prev => [...prev, ...templateComponentsCopy]);
+        
+        // Need to update setComponents to handle both passing in a new array and passing in a function
+        const newComponents = [...components, ...templateComponentsCopy];
+        setComponents(newComponents);
       }
     } else {
       // Handle component drop
@@ -118,7 +122,7 @@ const Canvas = () => {
     }
     
     setDraggedComponent(null);
-  }, [draggedComponent, setDraggedComponent, setComponents, addComponent]);
+  }, [draggedComponent, setDraggedComponent, components, setComponents, addComponent]);
 
   const handleCanvasDragStart = useCallback((e: React.DragEvent, componentType: string) => {
     e.dataTransfer.setData("componentType", componentType);

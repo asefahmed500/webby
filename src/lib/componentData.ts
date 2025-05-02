@@ -20,6 +20,16 @@ import {
   ShoppingBag,
   BookOpen
 } from "lucide-react";
+import type { Component } from "@/context/BuilderContext";
+
+export interface StandardTemplate {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  thumbnail: string;
+  components: Component[];
+}
 
 export const componentCategories = [
   {
@@ -206,7 +216,7 @@ export const componentTypes = [
   { type: "footer", label: "Footer", icon: "panel-bottom" }
 ];
 
-export const templates = [
+export const templates: StandardTemplate[] = [
   {
     id: "hero-section",
     name: "Hero Section",
