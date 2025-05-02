@@ -1,726 +1,478 @@
-
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo, useRef } from "react";
-import { defaultPages, Page, defaultWebsite, Website } from "@/lib/pageData";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { SEOSettings, defaultSEOSettings } from "@/lib/seoUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
-import { SEOSettings as SEOSettingsType, defaultSEOSettings } from '@/lib/seoUtils';
-import { storageService } from '@/lib/supabaseServices';
-import { saveWebsiteToSupabase } from "@/lib/supabaseHelpers";
+import { Page } from "@/lib/pageData";
+import { Website } from "@/types/database.types";
 
-export interface Component {
+export type Component = {
   id: string;
   type: string;
   content: string;
   styles: Record<string, string>;
-  children: Component[];
-}
+  children: string[];
+  parent: string | null;
+};
 
-export interface Template {
+export type PageType = {
   id: string;
   name: string;
-  thumbnail: string;
-  components: Component[];
-}
+  path: string;
+  components: string[];
+  seoSettings: SEOSettings;
+};
+
+export type PublishStatus = "draft" | "published";
 
 interface BuilderContextType {
   components: Component[];
   setComponents: React.Dispatch<React.SetStateAction<Component[]>>;
+  addComponent: (type: string, parent?: string) => void;
+  updateComponent: (id: string, data: Partial<Component>) => void;
+  removeComponent: (id: string) => void;
   selectedComponent: Component | null;
   setSelectedComponent: React.Dispatch<React.SetStateAction<Component | null>>;
-  isDragging: boolean;
-  setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
   draggedComponent: string | null;
   setDraggedComponent: React.Dispatch<React.SetStateAction<string | null>>;
-  addComponent: (type: string, targetId?: string) => void;
-  updateComponent: (id: string, updates: Partial<Component>) => void;
-  removeComponent: (id: string) => void;
-  previewMode: boolean;
-  setPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
-  pages: Page[];
-  setPages: React.Dispatch<React.SetStateAction<Page[]>>;
+  moveComponent: (dragId: string, dropId: string) => void;
+  pages: PageType[];
+  setPages: React.Dispatch<React.SetStateAction<PageType[]>>;
+  addPage: () => void;
+  updatePage: (id: string, data: Partial<PageType>) => void;
+  removePage: (id: string) => void;
   currentPageId: string;
   setCurrentPageId: React.Dispatch<React.SetStateAction<string>>;
-  addPage: (name: string) => void;
-  removePage: (id: string) => void;
-  publishStatus: "draft" | "published";
-  setPublishStatus: React.Dispatch<React.SetStateAction<"draft" | "published">>;
-  websiteId: string | null;
-  setWebsiteId: React.Dispatch<React.SetStateAction<string | null>>;
+  previewMode: boolean;
+  setPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
   websiteName: string;
   setWebsiteName: React.Dispatch<React.SetStateAction<string>>;
+  websiteDescription: string;
+  setWebsiteDescription: React.Dispatch<React.SetStateAction<string>>;
+  seoSettings: SEOSettings;
+  setSEOSettings: React.Dispatch<React.SetStateAction<SEOSettings>>;
+  publishStatus: PublishStatus;
+  setPublishStatus: React.Dispatch<React.SetStateAction<PublishStatus>>;
+  websiteId: string | null;
+  setWebsiteId: React.Dispatch<React.SetStateAction<string | null>>;
+  createdAt: string | null;
+  setCreatedAt: React.Dispatch<React.SetStateAction<string | null>>;
+  updatedAt: string | null;
+  setUpdatedAt: React.Dispatch<React.SetStateAction<string | null>>;
+  publishedAt: string | null;
+  setPublishedAt: React.Dispatch<React.SetStateAction<string | null>>;
+  userId: string | null;
+  setUserId: React.Dispatch<React.SetStateAction<string | null>>;
   saveWebsite: () => Promise<void>;
-  undoChange: () => void;
-  redoChange: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  lastSaved: Date | null;
-  isSaving: boolean;
-  viewportSize: "desktop" | "tablet" | "mobile";
-  setViewportSize: React.Dispatch<React.SetStateAction<"desktop" | "tablet" | "mobile">>;
-  seoSettings: SEOSettingsType | null;
-  setSEOSettings: React.Dispatch<React.SetStateAction<SEOSettingsType | null>>;
-  uploadImage: (file: File) => Promise<string>;
 }
 
-const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
+export const BuilderContext = createContext<BuilderContextType>({} as BuilderContextType);
 
-export const useBuilder = () => {
-  const context = useContext(BuilderContext);
-  if (!context) {
-    throw new Error("useBuilder must be used within a BuilderProvider");
-  }
-  return context;
-};
-
-interface HistoryState {
-  pages: Page[];
-  currentPageId: string;
-  components: Component[];
-}
-
-const MAX_HISTORY_STATES = 50;
-
-export const BuilderProvider: React.FC<{ children: ReactNode }> = ({ 
-  children 
-}) => {
-  const { user } = useAuth();
-  const [pages, setPages] = useState<Page[]>(defaultPages);
-  const [currentPageId, setCurrentPageId] = useState<string>("home");
-  const [publishStatus, setPublishStatus] = useState<"draft" | "published">("draft");
-  const [websiteId, setWebsiteId] = useState<string | null>(null);
-  const [websiteName, setWebsiteName] = useState<string>("My Website");
-  
+export const BuilderProvider = ({ children }: { children: React.ReactNode }) => {
   const [components, setComponents] = useState<Component[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [viewportSize, setViewportSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [seoSettings, setSEOSettings] = useState<SEOSettingsType | null>(null);
+  const [pages, setPages] = useState<PageType[]>([{
+    id: uuidv4(),
+    name: "Home",
+    path: "/",
+    components: [],
+    seoSettings: defaultSEOSettings,
+  }]);
+  const [currentPageId, setCurrentPageId] = useState<string>(pages[0].id);
+  const [previewMode, setPreviewMode] = useState<boolean>(false);
+  const [websiteName, setWebsiteName] = useState<string>("My Website");
+  const [websiteDescription, setWebsiteDescription] = useState<string>("");
+  const [seoSettings, setSEOSettings] = useState<SEOSettings>(defaultSEOSettings);
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>("draft");
+  const [websiteId, setWebsiteId] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const shouldUpdateHistoryRef = useRef<boolean>(true);
+  const { user } = useAuth();
 
-  const generateId = () => `component-${Math.random().toString(36).substr(2, 9)}`;
-
-  // Initialize history when all data is loaded
-  useEffect(() => {
-    if (initialLoadDone && shouldUpdateHistoryRef.current) {
-      const initialState: HistoryState = {
-        pages,
-        currentPageId,
-        components
-      };
-      setHistory([initialState]);
-      setHistoryIndex(0);
-      shouldUpdateHistoryRef.current = false;
-    }
-  }, [initialLoadDone, pages, currentPageId, components]);
-
-  // Update canUndo and canRedo states
-  useEffect(() => {
-    setCanUndo(historyIndex > 0);
-    setCanRedo(historyIndex < history.length - 1);
-  }, [history, historyIndex]);
-
-  const undoChange = useCallback(() => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      const previousState = history[newIndex];
-      
-      shouldUpdateHistoryRef.current = false;
-      
-      setPages(previousState.pages);
-      setCurrentPageId(previousState.currentPageId);
-      setComponents(previousState.components);
-      setHistoryIndex(newIndex);
-      
-      setTimeout(() => {
-        shouldUpdateHistoryRef.current = true;
-      }, 100);
-    }
-  }, [history, historyIndex]);
-
-  const redoChange = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      const nextState = history[newIndex];
-      
-      shouldUpdateHistoryRef.current = false;
-      
-      setPages(nextState.pages);
-      setCurrentPageId(nextState.currentPageId);
-      setComponents(nextState.components);
-      setHistoryIndex(newIndex);
-      
-      setTimeout(() => {
-        shouldUpdateHistoryRef.current = true;
-      }, 100);
-    }
-  }, [history, historyIndex]);
-
-  // Keyboard shortcuts for undo/redo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        e.preventDefault();
-        undoChange();
-      } else if (
-        (e.key === 'y' && (e.ctrlKey || e.metaKey)) || 
-        (e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)
-      ) {
-        e.preventDefault();
-        redoChange();
-      }
+  const addComponent = (type: string, parent: string | null = null) => {
+    const newComponent: Component = {
+      id: uuidv4(),
+      type: type,
+      content: ``,
+      styles: {},
+      children: [],
+      parent: parent,
     };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [undoChange, redoChange]);
 
-  // Add to history with debouncing
-  const addToHistory = useCallback((state: HistoryState) => {
-    if (!shouldUpdateHistoryRef.current) return;
-    
-    setHistory(prevHistory => {
-      const newHistory = prevHistory.slice(0, historyIndex + 1);
-      const updatedHistory = [...newHistory, state];
-      if (updatedHistory.length > MAX_HISTORY_STATES) {
-        return updatedHistory.slice(updatedHistory.length - MAX_HISTORY_STATES);
-      }
-      return updatedHistory;
-    });
-    
-    setHistoryIndex(prevIndex => {
-      const newIndex = Math.min(prevIndex + 1, MAX_HISTORY_STATES - 1);
-      return newIndex;
-    });
-  }, [historyIndex]);
+    setComponents([...components, newComponent]);
 
-  // Check if user is logged in and try loading from Supabase first
-  useEffect(() => {
-    const loadDataFromSupabase = async () => {
-      if (!user?.id) return false;
-      
-      try {
-        // Try to get the latest website for this user
-        const { data, error } = await supabase
-          .from('websites')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        if (error || !data) {
-          console.log("No data found in Supabase, will try localStorage");
-          return false;
-        }
-        
-        console.log("Found website data in Supabase:", data);
-        
-        // Transform Supabase data to the expected format
-        const websiteData = {
-          id: data.id,
-          name: data.name,
-          description: data.description,
-          pages: data.pages || defaultPages,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          publishedAt: data.published_at,
-          userId: data.user_id,
-          publishStatus: data.publish_status || "draft",
-          seoSettings: data.seo_settings || null
-        };
-        
-        // Update local storage with the latest data from Supabase
-        localStorage.setItem("saved-website", JSON.stringify(websiteData));
-        
-        // Update state
-        setPages(websiteData.pages);
-        setPublishStatus(websiteData.publishStatus);
-        setWebsiteId(websiteData.id);
-        setWebsiteName(websiteData.name || "My Website");
-        
-        if (websiteData.seoSettings) {
-          setSEOSettings(websiteData.seoSettings);
-        }
-        
-        const homePage = websiteData.pages.find(p => p.isHome) || websiteData.pages[0];
-        if (homePage) {
-          setCurrentPageId(homePage.id);
-        }
-        
-        return true;
-      } catch (error) {
-        console.error("Error loading from Supabase:", error);
-        return false;
-      }
-    };
-    
-    // Load saved website data
-    async function loadData() {
-      try {
-        // First try loading from Supabase if user is logged in
-        const loadedFromSupabase = user?.id ? await loadDataFromSupabase() : false;
-        
-        // If not loaded from Supabase, try localStorage
-        if (!loadedFromSupabase) {
-          const savedData = localStorage.getItem("saved-website");
-          const publishedData = localStorage.getItem("published-website");
-          
-          if (savedData) {
-            const parsedData = JSON.parse(savedData);
-            if (parsedData.pages) {
-              console.log("Loading pages from saved data:", parsedData.pages.length);
-              setPages(parsedData.pages);
-              
-              if (parsedData.publishStatus) {
-                setPublishStatus(parsedData.publishStatus);
-              }
-              
-              if (parsedData.websiteId) {
-                setWebsiteId(parsedData.websiteId);
-              }
-              
-              if (parsedData.websiteName) {
-                setWebsiteName(parsedData.websiteName);
-              }
-              
-              if (parsedData.seoSettings) {
-                setSEOSettings(parsedData.seoSettings);
-              }
-              
-              if (parsedData.currentPageId) {
-                setCurrentPageId(parsedData.currentPageId);
-              } else {
-                const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-                if (homePage) {
-                  setCurrentPageId(homePage.id);
-                }
-              }
-            }
-          } else if (publishedData) {
-            const parsedData = JSON.parse(publishedData);
-            if (parsedData.pages) {
-              console.log("No saved data, using published data");
-              setPages(parsedData.pages);
-              setPublishStatus("published");
-              
-              if (parsedData.websiteName) {
-                setWebsiteName(parsedData.websiteName);
-              }
-              
-              if (parsedData.seoSettings) {
-                setSEOSettings(parsedData.seoSettings);
-              }
-              
-              if (parsedData.currentPageId) {
-                setCurrentPageId(parsedData.currentPageId);
-              } else {
-                const homePage = parsedData.pages.find((p: Page) => p.isHome) || parsedData.pages[0];
-                if (homePage) {
-                  setCurrentPageId(homePage.id);
-                }
-              }
-            }
+    // If the component has a parent, update the parent's children array
+    if (parent) {
+      setComponents((prevComponents) => {
+        return prevComponents.map((component) => {
+          if (component.id === parent) {
+            return {
+              ...component,
+              children: [...component.children, newComponent.id],
+            };
+          } else {
+            return component;
           }
-        }
-        
-        setInitialLoadDone(true);
-        setLastSaved(new Date());
-      } catch (error) {
-        console.error("Error loading saved website:", error);
-        setInitialLoadDone(true);
-      }
-    }
-    
-    loadData();
-  }, [user]);
-
-  // Check published status on load
-  useEffect(() => {
-    if (!initialLoadDone) return;
-    
-    try {
-      const publishedData = localStorage.getItem("published-website");
-      if (publishedData) {
-        const parsedData = JSON.parse(publishedData);
-        if (parsedData.publishStatus === "published") {
-          setPublishStatus("published");
-        }
-      }
-    } catch (error) {
-      console.error("Error checking published status:", error);
-    }
-  }, [initialLoadDone]);
-
-  // Load components for current page
-  useEffect(() => {
-    if (!initialLoadDone) return;
-    
-    const currentPage = pages.find(page => page.id === currentPageId);
-    if (currentPage) {
-      console.log("Setting components from current page:", currentPage.id, currentPage.components?.length || 0);
-      
-      shouldUpdateHistoryRef.current = false;
-      
-      const componentsCopy = currentPage.components ? 
-        JSON.parse(JSON.stringify(currentPage.components)) : [];
-        
-      setComponents(componentsCopy);
-      setSelectedComponent(null);
-      
-      setTimeout(() => {
-        shouldUpdateHistoryRef.current = true;
-      }, 100);
-    }
-  }, [currentPageId, pages, initialLoadDone]);
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (!initialLoadDone) return;
-    
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-    }
-    
-    autoSaveTimerRef.current = setTimeout(() => {
-      if (initialLoadDone) {
-        console.log("Auto-saving website...");
-        setIsSaving(true);
-        
-        saveWebsite()
-          .then(() => {
-            setLastSaved(new Date());
-            setIsSaving(false);
-          })
-          .catch(() => {
-            setIsSaving(false);
-          });
-      }
-    }, 10000);
-    
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [components, pages, currentPageId, websiteName, initialLoadDone]);
-
-  // Update page components with debouncing
-  const updatePageComponents = useCallback(() => {
-    if (!initialLoadDone) return;
-    
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-    
-    updateTimeoutRef.current = setTimeout(() => {
-      setPages(prevPages => {
-        const updatedPages = prevPages.map(page => 
-          page.id === currentPageId ? { ...page, components } : page
-        );
-        
-        if (shouldUpdateHistoryRef.current) {
-          addToHistory({
-            pages: updatedPages,
-            currentPageId,
-            components
-          });
-        }
-        
-        return updatedPages;
+        });
       });
-    }, 300);
-  }, [components, currentPageId, initialLoadDone, addToHistory]);
-  
-  useEffect(() => {
-    if (!initialLoadDone) return;
-    updatePageComponents();
-    
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-    };
-  }, [components, updatePageComponents, initialLoadDone]);
+    }
 
-  const saveWebsite = async () => {
-    try {
-      setIsSaving(true);
-      
-      const updatedPages = pages.map(page => 
-        page.id === currentPageId ? { ...page, components } : page
-      );
-      
-      const websiteData = {
-        ...defaultWebsite,
-        id: websiteId || `website-${Math.random().toString(36).substr(2, 9)}`,
-        name: websiteName,
-        pages: updatedPages,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: user?.id,
-        currentPageId,
-        publishStatus,
-        seoSettings
-      };
-      
-      console.log("Saving website data:", JSON.stringify(websiteData));
-      localStorage.setItem("saved-website", JSON.stringify(websiteData));
-      
-      if (!websiteId) {
-        setWebsiteId(websiteData.id);
-      }
-      
-      setPages(updatedPages);
-      setLastSaved(new Date());
-      
-      // If user is logged in, attempt to save to Supabase
-      if (user?.id) {
-        try {
-          await saveWebsiteToSupabase(websiteData);
-        } catch (supabaseError) {
-          console.error("Error saving to Supabase:", supabaseError);
-          // Continue since we've already saved to localStorage
+    // If adding to a page, update the page's components array
+    setPages((prevPages) => {
+      return prevPages.map((page) => {
+        if (page.id === currentPageId) {
+          return {
+            ...page,
+            components: [...page.components, newComponent.id],
+          };
+        } else {
+          return page;
         }
+      });
+    });
+  };
+
+  const updateComponent = (id: string, data: Partial<Component>) => {
+    setComponents((prevComponents) => {
+      return prevComponents.map((component) => {
+        if (component.id === id) {
+          return { ...component, ...data };
+        } else {
+          return component;
+        }
+      });
+    });
+  };
+
+  const removeComponent = (id: string) => {
+    setComponents((prevComponents) => {
+      return prevComponents.filter((component) => component.id !== id);
+    });
+
+    // Remove component from parent's children array
+    setComponents((prevComponents) => {
+      return prevComponents.map((component) => {
+        if (component.children.includes(id)) {
+          return {
+            ...component,
+            children: component.children.filter((childId) => childId !== id),
+          };
+        } else {
+          return component;
+        }
+      });
+    });
+
+    // Remove component from page's components array
+    setPages((prevPages) => {
+      return prevPages.map((page) => {
+        if (page.components.includes(id)) {
+          return {
+            ...page,
+            components: page.components.filter((componentId) => componentId !== id),
+          };
+        } else {
+          return page;
+        }
+      });
+    });
+  };
+
+  const moveComponent = (dragId: string, dropId: string) => {
+    setComponents((prevComponents) => {
+      // Find the dragged and dropped components
+      const draggedComponent = prevComponents.find((c) => c.id === dragId);
+      const droppedComponent = prevComponents.find((c) => c.id === dropId);
+
+      if (!draggedComponent || !droppedComponent) {
+        console.error("Dragged or dropped component not found");
+        return prevComponents;
       }
-      
-      setIsSaving(false);
-      return Promise.resolve();
+
+      // Check if the dragged component is already a child of the dropped component
+      if (draggedComponent.parent === dropId) {
+        return prevComponents;
+      }
+
+      // Remove the dragged component from its previous parent
+      const updatedComponents = prevComponents.map((c) => {
+        if (c.children.includes(dragId)) {
+          return {
+            ...c,
+            children: c.children.filter((childId) => childId !== dragId),
+          };
+        }
+        return c;
+      });
+
+      // Update the parent of the dragged component
+      draggedComponent.parent = dropId;
+
+      // Add the dragged component to the children of the dropped component
+      droppedComponent.children = [...droppedComponent.children, dragId];
+
+      // Return the updated components array
+      return updatedComponents.map((c) => {
+        if (c.id === dragId) {
+          return draggedComponent;
+        } else if (c.id === dropId) {
+          return droppedComponent;
+        } else {
+          return c;
+        }
+      });
+    });
+  };
+
+  const addPage = () => {
+    const newPage: PageType = {
+      id: uuidv4(),
+      name: "New Page",
+      path: "/new-page",
+      components: [],
+      seoSettings: defaultSEOSettings,
+    };
+
+    setPages([...pages, newPage]);
+    setCurrentPageId(newPage.id);
+  };
+
+  const updatePage = (id: string, data: Partial<PageType>) => {
+    setPages((prevPages) => {
+      return prevPages.map((page) => {
+        if (page.id === id) {
+          return { ...page, ...data };
+        } else {
+          return page;
+        }
+      });
+    });
+  };
+
+  const removePage = (id: string) => {
+    setPages((prevPages) => {
+      return prevPages.filter((page) => page.id !== id);
+    });
+  };
+
+  const loadFromLocalStorage = () => {
+    try {
+      const savedData = localStorage.getItem("saved-website");
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.pages) {
+          setPages(parsedData.pages);
+          setComponents(parsedData.components || []);
+          setWebsiteName(parsedData.websiteName || "My Website");
+          setWebsiteDescription(parsedData.websiteDescription || "");
+          setSEOSettings(parsedData.seoSettings || defaultSEOSettings);
+          setPublishStatus(parsedData.publishStatus || "draft");
+          setWebsiteId(parsedData.websiteId || null);
+          setCreatedAt(parsedData.createdAt || null);
+          setUpdatedAt(parsedData.updatedAt || null);
+          setPublishedAt(parsedData.publishedAt || null);
+          setUserId(parsedData.userId || null);
+          setCurrentPageId(parsedData.pages[0].id);
+          console.info("Loaded website from localStorage:", parsedData.websiteName);
+        } else {
+          toast("No saved website found");
+        }
+      } else {
+        toast("No saved website found");
+      }
     } catch (error) {
-      console.error("Error saving website:", error);
-      setIsSaving(false);
-      return Promise.reject(error);
+      console.error("Error loading website from localStorage:", error);
     }
   };
 
-  const addComponent = useCallback((type: string, targetId?: string) => {
-    const newComponent: Component = {
-      id: generateId(),
-      type,
-      content: type === "text" ? "Edit this text" : "",
-      styles: {},
-      children: [],
-    };
-
-    if (!targetId) {
-      setComponents(prev => {
-        const updatedComponents = [...prev, newComponent];
-        return updatedComponents;
-      });
-      return;
-    }
-
-    const updatedComponents = JSON.parse(JSON.stringify(components));
-    
-    const addToChildren = (items: Component[]) => {
-      return items.map(item => {
-        if (item.id === targetId) {
-          return {
-            ...item,
-            children: [...item.children, newComponent]
-          };
-        }
-        if (item.children.length > 0) {
-          return {
-            ...item,
-            children: addToChildren(item.children)
-          };
-        }
-        return item;
-      });
-    };
-    
-    setComponents(addToChildren(updatedComponents));
-  }, [components]);
-
-  const updateComponent = useCallback((id: string, updates: Partial<Component>) => {
-    const updateComponentRecursive = (components: Component[]): Component[] => {
-      return components.map(component => {
-        if (component.id === id) {
-          const updatedComponent = { ...component, ...updates };
-          return updatedComponent;
-        }
-        if (component.children.length > 0) {
-          return {
-            ...component,
-            children: updateComponentRecursive(component.children)
-          };
-        }
-        return component;
-      });
-    };
-
-    const updatedComponents = updateComponentRecursive(JSON.parse(JSON.stringify(components)));
-    setComponents(updatedComponents);
-  }, [components]);
-
-  const removeComponent = useCallback((id: string) => {
-    const removeComponentRecursive = (components: Component[]): Component[] => {
-      return components
-        .filter(component => component.id !== id)
-        .map(component => ({
-          ...component,
-          children: removeComponentRecursive(component.children)
-        }));
-    };
-
-    const updatedComponents = removeComponentRecursive(JSON.parse(JSON.stringify(components)));
-    setComponents(updatedComponents);
-    
-    if (selectedComponent?.id === id) {
-      setSelectedComponent(null);
-    }
-  }, [components, selectedComponent]);
-  
-  const addPage = useCallback((name: string) => {
-    const id = name.toLowerCase().replace(/\s+/g, '-');
-    const path = id === 'home' ? '/' : `/${id}`;
-    
-    const newPage: Page = {
-      id,
-      name,
-      path,
-      components: [],
-      isHome: false
-    };
-    
-    const updatedPages = pages.map(page => 
-      page.id === currentPageId ? { ...page, components } : page
-    );
-    
-    setPages([...updatedPages, newPage]);
-    setCurrentPageId(id);
-    setComponents([]);
-    setSelectedComponent(null);
-    
-    addToHistory({
-      pages: [...updatedPages, newPage],
-      currentPageId: id,
-      components: []
-    });
-    
-    toast.success(`Page "${name}" created`);
-  }, [pages, components, currentPageId, addToHistory]);
-  
-  const removePage = useCallback((id: string) => {
-    if (pages.length <= 1) {
-      toast.error("Cannot delete the only page");
-      return;
-    }
-    
-    const updatedPages = pages.filter(page => page.id !== id);
-    setPages(updatedPages);
-    
-    if (currentPageId === id) {
-      const newCurrentId = updatedPages[0].id;
-      setCurrentPageId(newCurrentId);
-      
-      const newCurrentPage = updatedPages[0];
-      setComponents(newCurrentPage.components || []);
-      
-      addToHistory({
-        pages: updatedPages,
-        currentPageId: newCurrentId,
-        components: newCurrentPage.components || []
-      });
-    } else {
-      addToHistory({
-        pages: updatedPages,
-        currentPageId,
-        components
-      });
-    }
-    
-    toast.success("Page deleted");
-  }, [pages, currentPageId, components, addToHistory]);
-
-  const uploadImage = async (file: File): Promise<string> => {
-    if (!user) {
-      throw new Error("You must be logged in to upload images");
-    }
-    
+  const saveToLocalStorage = () => {
     try {
-      const filePath = `user-uploads/${user.id}/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-      
-      const { data, error } = await storageService.uploadFile('website_assets', filePath, file);
-      
-      if (error) throw error;
-      
-      // Get the public URL for the uploaded file
-      const imageUrl = storageService.getFileUrl('website_assets', filePath);
-      return imageUrl;
+      const websiteData = {
+        components,
+        pages,
+        websiteName,
+        websiteDescription,
+        seoSettings,
+        publishStatus,
+        websiteId,
+        createdAt,
+        updatedAt,
+        publishedAt,
+        userId
+      };
+      localStorage.setItem("saved-website", JSON.stringify(websiteData));
+      console.info("Website saved to localStorage:", websiteName);
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Error saving website to localStorage:", error);
+    }
+  };
+
+  // Load saved website
+  const loadSavedWebsite = async () => {
+    try {
+      if (!user) {
+        // If no user, try to load from localStorage
+        loadFromLocalStorage();
+        return;
+      }
+      
+      console.info("Trying to load websites from Supabase");
+      const { data: websites, error } = await supabase
+        .from('websites')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (websites && websites.length > 0) {
+        const website = websites[0] as Website;
+        
+        // Set state from the database
+        setWebsiteId(website.id);
+        setWebsiteName(website.name);
+        setWebsiteDescription(website.description);
+        setPages(website.pages as Page[] || []);
+        setCreatedAt(website.created_at);
+        setUpdatedAt(website.updated_at);
+        setPublishedAt(website.published_at || null);
+        setUserId(website.user_id);
+        setPublishStatus(website.publish_status as PublishStatus);
+        setSEOSettings(website.seo_settings as SEOSettings);
+        
+        // Set the current page
+        if (pages.length > 0) {
+          setCurrentPageId(pages[0].id);
+        }
+        
+        console.info("Loaded website from Supabase:", website.name);
+      } else {
+        console.info("No data found in Supabase, will try localStorage");
+        loadFromLocalStorage();
+      }
+    } catch (error) {
+      console.error("Error loading website:", error);
+      loadFromLocalStorage();
+    }
+  };
+
+  // Save website to Supabase and localStorage
+  const saveWebsite = async () => {
+    try {
+      // Save to localStorage first (as a backup)
+      saveToLocalStorage();
+      
+      if (!user) {
+        console.info("No user logged in, saved to localStorage only");
+        return;
+      }
+      
+      const websiteData = {
+        id: websiteId || uuidv4(),
+        name: websiteName || "My Website",
+        description: websiteDescription || "",
+        pages,
+        updated_at: new Date().toISOString(),
+        user_id: user.id,
+        publish_status: publishStatus,
+        seo_settings: seoSettings,
+      };
+      
+      if (!websiteId) {
+        // This is a new website, set the creation date
+        Object.assign(websiteData, {
+          created_at: new Date().toISOString()
+        });
+        
+        // Set the websiteId for future saves
+        setWebsiteId(websiteData.id);
+      }
+      
+      const { data, error } = await supabase
+        .from('websites')
+        .upsert(websiteData)
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.info("Website saved to Supabase:", data);
+      setUpdatedAt(new Date().toISOString());
+    } catch (error) {
+      console.error("Error saving website:", error);
+      toast.error("Error saving website");
       throw error;
     }
   };
 
-  const contextValue = useMemo(() => ({
-    components,
-    setComponents,
-    selectedComponent,
-    setSelectedComponent,
-    isDragging,
-    setIsDragging,
-    draggedComponent,
-    setDraggedComponent,
-    addComponent,
-    updateComponent,
-    removeComponent,
-    previewMode,
-    setPreviewMode,
-    pages,
-    setPages,
-    currentPageId,
-    setCurrentPageId,
-    addPage,
-    removePage,
-    publishStatus,
-    setPublishStatus,
-    websiteId,
-    setWebsiteId,
-    websiteName,
-    setWebsiteName,
-    saveWebsite,
-    undoChange,
-    redoChange,
-    canUndo,
-    canRedo,
-    lastSaved,
-    isSaving,
-    viewportSize,
-    setViewportSize,
-    seoSettings,
-    setSEOSettings,
-    uploadImage
-  }), [
-    components, selectedComponent, isDragging, draggedComponent, 
-    previewMode, pages, currentPageId, publishStatus, websiteId, 
-    websiteName, addComponent, updateComponent, removeComponent,
-    addPage, removePage, saveWebsite, undoChange, redoChange,
-    canUndo, canRedo, lastSaved, isSaving, viewportSize,
-    seoSettings, setSEOSettings, uploadImage
-  ]);
+  useEffect(() => {
+    if (draggedComponent && selectedComponent) {
+      moveComponent(draggedComponent, selectedComponent.id);
+      setDraggedComponent(null);
+    }
+  }, [selectedComponent, draggedComponent, moveComponent]);
+
+  // Initialize
+  useEffect(() => {
+    loadSavedWebsite();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
-    <BuilderContext.Provider value={contextValue}>
+    <BuilderContext.Provider
+      value={{
+        components,
+        setComponents,
+        addComponent,
+        updateComponent,
+        removeComponent,
+        selectedComponent,
+        setSelectedComponent,
+        draggedComponent,
+        setDraggedComponent,
+        moveComponent,
+        pages,
+        setPages,
+        addPage,
+        updatePage,
+        removePage,
+        currentPageId,
+        setCurrentPageId,
+        previewMode,
+        setPreviewMode,
+        websiteName,
+        setWebsiteName,
+        websiteDescription,
+        setWebsiteDescription,
+        seoSettings,
+        setSEOSettings,
+        publishStatus,
+        setPublishStatus,
+        websiteId,
+        setWebsiteId,
+        createdAt,
+        setCreatedAt,
+        updatedAt,
+        setUpdatedAt,
+        publishedAt,
+        setPublishedAt,
+        userId,
+        setUserId,
+        saveWebsite,
+      }}
+    >
       {children}
     </BuilderContext.Provider>
   );
 };
+
+export const useBuilder = () => useContext(BuilderContext);

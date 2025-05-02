@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { useBuilder } from "@/context/BuilderContext";
 import { componentTypes, templates } from "@/lib/componentData";
-import { layoutComponents } from "@/lib/layoutComponents"; 
+import { layoutTemplates } from "@/lib/layoutComponents"; 
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -91,7 +90,7 @@ const ComponentSidebar = () => {
   };
 
   // Combine all templates for filtering
-  const allTemplates = [...templates, ...layoutComponents];
+  const allTemplates = [...templates, ...layoutTemplates];
 
   // Filter templates based on search term
   const filteredTemplates = allTemplates.filter(template => 

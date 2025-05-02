@@ -1,82 +1,53 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trash2, Globe, Settings, Edit } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Website } from "@/types/database.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Page } from "@/lib/pageData";
-import { toast } from "sonner";
-import { 
-  Layout, 
-  Plus, 
-  Globe, 
-  FileEdit, 
-  Trash2, 
-  BookOpen,
-  Briefcase,
-  ShoppingBag,
-  Calendar
-} from "lucide-react";
-import Navbar from "@/components/Navbar";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Layout, Plus, Globe, FileEdit, Trash2, BookOpen, Briefcase, ShoppingBag, Calendar } from "lucide-react";
 import { useRequireAuth } from "@/hooks/useRedirectAuth";
 import { defaultTemplates } from "@/lib/templateData";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [websites, setWebsites] = useState<any[]>([]);
+  const [websites, setWebsites] = useState<Website[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
   // Require authentication for this page
   useRequireAuth();
 
+  // Load user websites function
+  const loadUserWebsites = async (userId: string, setWebsites: React.Dispatch<React.SetStateAction<Website[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('websites')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setWebsites(data as Website[]);
+    } catch (error) {
+      console.error('Error loading websites:', error);
+      toast.error('Failed to load your websites');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
-      // First try to get websites from Supabase
-      const fetchWebsites = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('websites')
-            .select('*')
-            .eq('user_id', user.id);
-            
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            setWebsites(data.map(site => ({
-              id: site.id || '',
-              name: site.name || 'Unnamed Website',
-              created_at: site.created_at || new Date().toISOString(),
-              pages: (site.pages && Array.isArray(site.pages)) ? site.pages.length : 0,
-              status: site.publish_status || "draft"
-            })));
-            return;
-          }
-        } catch (error) {
-          console.error("Error fetching from Supabase:", error);
-        }
-        
-        // Fallback to localStorage
-        try {
-          const savedData = localStorage.getItem("saved-website");
-          if (savedData) {
-            const data = JSON.parse(savedData);
-            setWebsites([{
-              id: data.websiteId || "1",
-              name: data.websiteName || "My Website",
-              created_at: data.createdAt || new Date().toISOString(),
-              pages: data.pages?.length || 0,
-              status: data.publishStatus || "draft"
-            }]);
-          }
-        } catch (error) {
-          console.error("Error loading websites from localStorage:", error);
-        }
-      };
-      
-      fetchWebsites();
-      setLoading(false);
+      loadUserWebsites(user.id, setWebsites, setLoading);
     }
   }, [user]);
 

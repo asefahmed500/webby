@@ -3,9 +3,9 @@ import {
   LayoutDashboard, 
   Type, 
   Image, 
-  Button as ButtonIcon,
-  List,
-  Form, 
+  Square as ButtonIcon,
+  ListChecks as List,
+  FormInput as FormIcon, 
   Link as LinkIcon, 
   Menu,
   MessageSquare,
@@ -13,7 +13,7 @@ import {
   Award,
   Mail,
   ArrowRight,
-  Footer as FooterComp, // Rename to avoid conflict
+  PanelBottom as FooterIcon, // Rename to avoid conflict
 } from "lucide-react";
 
 // We're using a functional approach to define icons rather than JSX
@@ -80,7 +80,7 @@ export const navigationComponents = [
   {
     id: "footer",
     name: "Footer",
-    icon: FooterComp,
+    icon: FooterIcon,
     description: "Footer section",
     variants: ["simple", "multicolumn"],
   },

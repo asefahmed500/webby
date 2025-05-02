@@ -1,86 +1,10 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Website } from "./pageData";
-import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
+import { Page } from '@/lib/pageData';
+import { Website, NewWebsite, UpdateWebsite } from '@/types/database.types';
+import { v4 as uuidv4 } from 'uuid';
 
-// Function to save a website to Supabase
-export const saveWebsiteToSupabase = async (website: Website): Promise<boolean> => {
-  try {
-    // Check if the website has a user ID
-    if (!website.userId) {
-      console.error("Website has no userId");
-      return false;
-    }
-
-    // Check if website already exists in Supabase
-    const { data: existingWebsite, error: fetchError } = await supabase
-      .from('websites')
-      .select('id')
-      .eq('id', website.id)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error("Error checking for existing website:", fetchError);
-      return false;
-    }
-
-    let result;
-    
-    // If website exists, update it
-    if (existingWebsite) {
-      const { data, error } = await supabase
-        .from('websites')
-        .update({
-          name: website.name,
-          description: website.description,
-          pages: website.pages,
-          updated_at: website.updatedAt,
-          published_at: website.publishedAt,
-          publish_status: website.publishStatus || "draft"
-        })
-        .eq('id', website.id);
-      
-      if (error) {
-        console.error("Error updating website in Supabase:", error);
-        return false;
-      }
-      
-      result = true;
-    } 
-    // If website doesn't exist, insert it
-    else {
-      const { data, error } = await supabase
-        .from('websites')
-        .insert([
-          {
-            id: website.id,
-            name: website.name,
-            description: website.description,
-            pages: website.pages,
-            created_at: website.createdAt,
-            updated_at: website.updatedAt,
-            published_at: website.publishedAt,
-            user_id: website.userId,
-            publish_status: website.publishStatus || "draft"
-          }
-        ]);
-      
-      if (error) {
-        console.error("Error inserting website in Supabase:", error);
-        return false;
-      }
-      
-      result = true;
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Error in saveWebsiteToSupabase:", error);
-    return false;
-  }
-};
-
-// Function to get all websites for a user
+// Get all websites for a user
 export const getUserWebsites = async (userId: string) => {
   try {
     const { data, error } = await supabase
@@ -88,72 +12,109 @@ export const getUserWebsites = async (userId: string) => {
       .select('*')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
+      
+    if (error) throw error;
     
-    if (error) {
-      console.error("Error fetching user websites:", error);
-      return [];
-    }
-    
-    return data || [];
+    return data as Website[];
   } catch (error) {
-    console.error("Error in getUserWebsites:", error);
-    return [];
+    console.error('Error getting user websites:', error);
+    throw error;
   }
 };
 
-// Function to delete a website
+// Save a website
+export const saveWebsite = async (websiteData: UpdateWebsite) => {
+  try {
+    const { data, error } = await supabase
+      .from('websites')
+      .upsert(websiteData)
+      .select();
+      
+    if (error) throw error;
+    
+    return data?.[0] as Website;
+  } catch (error) {
+    console.error('Error saving website:', error);
+    throw error;
+  }
+};
+
+// Publish a website (or multiple websites)
+export const publishWebsite = async (websiteData: Website | Website[]) => {
+  try {
+    // Handle single website or array of websites
+    const websites = Array.isArray(websiteData) ? websiteData : [websiteData];
+    
+    // Update each website with published status
+    const updatedWebsites = websites.map(website => ({
+      ...website,
+      published_at: new Date().toISOString(),
+      publish_status: 'published'
+    }));
+    
+    const { data, error } = await supabase
+      .from('websites')
+      .upsert(updatedWebsites)
+      .select();
+      
+    if (error) throw error;
+    
+    return data as Website[];
+  } catch (error) {
+    console.error('Error publishing website:', error);
+    throw error;
+  }
+};
+
+// Get a specific website by ID
+export const getWebsiteById = async (websiteId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('websites')
+      .select('*')
+      .eq('id', websiteId)
+      .single();
+      
+    if (error) throw error;
+    
+    return data as Website;
+  } catch (error) {
+    console.error('Error getting website by ID:', error);
+    throw error;
+  }
+};
+
+// Get all published websites
+export const getPublishedWebsites = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('websites')
+      .select('*')
+      .eq('publish_status', 'published')
+      .order('published_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data as Website[];
+  } catch (error) {
+    console.error('Error getting published websites:', error);
+    throw error;
+  }
+};
+
+// Delete a website
 export const deleteWebsite = async (websiteId: string) => {
   try {
     const { error } = await supabase
       .from('websites')
       .delete()
       .eq('id', websiteId);
-    
-    if (error) {
-      console.error("Error deleting website:", error);
-      return false;
-    }
+      
+    if (error) throw error;
     
     return true;
   } catch (error) {
-    console.error("Error in deleteWebsite:", error);
-    return false;
-  }
-};
-
-// Function to publish a website
-export const publishWebsite = async (website: Website) => {
-  try {
-    const websiteWithPublishStatus = {
-      ...website,
-      publishStatus: "published",
-      publishedAt: new Date().toISOString()
-    };
-    
-    // Save to Supabase
-    const savedToSupabase = await saveWebsiteToSupabase(websiteWithPublishStatus);
-    
-    // Also save to localStorage as a backup
-    localStorage.setItem("published-website", JSON.stringify(websiteWithPublishStatus));
-    
-    return savedToSupabase;
-  } catch (error) {
-    console.error("Error publishing website:", error);
-    return false;
-  }
-};
-
-// Function to check if Supabase is available
-export const checkSupabaseConnection = async (): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('websites')
-      .select('count')
-      .limit(1);
-    
-    return !error;
-  } catch (error) {
-    console.error("Error checking Supabase connection:", error);
-    return false;
+    console.error('Error deleting website:', error);
+    throw error;
   }
 };

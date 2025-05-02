@@ -15,7 +15,7 @@ import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Templates from "./pages/Templates";
-import React from 'react';
+import * as React from 'react';
 
 // Create a new QueryClient instance - moved inside the component to ensure it's created fresh for each render
 const App = () => {
