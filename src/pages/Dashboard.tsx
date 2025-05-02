@@ -1,16 +1,27 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Globe, Settings, Edit } from "lucide-react";
+import { 
+  Trash2, 
+  Settings, 
+  Edit,
+  Layout, 
+  Globe, 
+  FileEdit, 
+  BookOpen, 
+  Briefcase, 
+  ShoppingBag, 
+  Calendar,
+  Plus 
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Website } from "@/types/database.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Page } from "@/lib/pageData";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Layout, Plus, Globe, FileEdit, Trash2, BookOpen, Briefcase, ShoppingBag, Calendar } from "lucide-react";
 import { useRequireAuth } from "@/hooks/useRedirectAuth";
 import { defaultTemplates } from "@/lib/templateData";
 
@@ -24,7 +35,7 @@ export default function Dashboard() {
   useRequireAuth();
 
   // Load user websites function
-  const loadUserWebsites = async (userId: string, setWebsites: React.Dispatch<React.SetStateAction<Website[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
+  const loadUserWebsites = async (userId: string) => {
     try {
       setLoading(true);
       
@@ -47,7 +58,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      loadUserWebsites(user.id, setWebsites, setLoading);
+      loadUserWebsites(user.id);
     }
   }, [user]);
 
@@ -133,13 +144,13 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent className="pb-2">
                       <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>{website.pages} pages</span>
+                        <span>{typeof website.pages === 'object' ? 'Multiple pages' : '1 page'}</span>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          website.status === "published" 
+                          website.publish_status === "published" 
                             ? "bg-green-100 text-green-800" 
                             : "bg-amber-100 text-amber-800"
                         }`}>
-                          {website.status === "published" ? "Published" : "Draft"}
+                          {website.publish_status === "published" ? "Published" : "Draft"}
                         </span>
                       </div>
                     </CardContent>

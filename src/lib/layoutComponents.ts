@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Type,
   Menu,
-  PanelBottom as FooterIcon, // Rename to avoid conflict
+  PanelBottom as FooterComp, // Renamed to avoid conflict
 } from "lucide-react";
 
 export const layoutTemplates = [
@@ -28,7 +28,7 @@ export const layoutTemplates = [
   {
     id: "blog-layout",
     name: "Blog Layout",
-    icon: FooterIcon,
+    icon: FooterComp,
     description: "Layout designed for blog posts",
   },
 ];

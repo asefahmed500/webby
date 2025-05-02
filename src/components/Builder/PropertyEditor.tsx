@@ -47,6 +47,7 @@ const PropertyEditor = () => {
     }
   };
 
+  // Fix the z-index and positioning to prevent flickering
   const renderContentEditor = () => {
     switch (selectedComponent.type) {
       case "text":
@@ -189,7 +190,7 @@ const PropertyEditor = () => {
   };
 
   return (
-    <div className="w-64 border-l border-gray-200 bg-white h-full overflow-auto">
+    <div className="w-64 border-l border-gray-200 bg-white h-full overflow-auto fixed right-0 top-0 bottom-0 z-50">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-medium">Properties</h2>
         <button 
@@ -216,7 +217,7 @@ const PropertyEditor = () => {
           {renderContentEditor()}
         </TabsContent>
 
-        <TabsContent value="style" className="p-4 space-y-4">
+        <TabsContent value="style" className="p-4 space-y-4 pb-24">
           {getStyleFields().map((style) => (
             <div key={style.property}>
               <Label htmlFor={style.property}>{style.label}</Label>

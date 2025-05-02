@@ -6,10 +6,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthProvider";
 import Navbar from "@/components/Navbar";
 import { useRedirectIfAuth } from "@/hooks/useRedirectAuth";
 import { Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -17,6 +19,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   
   // Redirect if already logged in
@@ -24,9 +27,10 @@ export default function Auth() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
     if (!email || !password) {
-      toast.error("Please enter both email and password");
+      setError("Please enter both email and password");
       return;
     }
     
@@ -40,6 +44,7 @@ export default function Auth() {
         });
 
         if (error) throw error;
+        console.log("Login successful:", data);
         toast.success("Logged in successfully!");
         navigate("/dashboard");
       } else {
@@ -52,16 +57,18 @@ export default function Auth() {
         
         if (data.session) {
           // User is immediately signed in (email confirmation is disabled)
+          console.log("Signup successful (auto login):", data);
           toast.success("Account created successfully!");
           navigate("/dashboard");
         } else {
           // Email confirmation is enabled
+          console.log("Signup initiated, confirmation required:", data);
           toast.success("Signup successful! Please check your email for verification.");
         }
       }
     } catch (error: any) {
       console.error("Authentication error:", error);
-      toast.error(error.message || "An error occurred during authentication");
+      setError(error.message || "An error occurred during authentication");
     } finally {
       setLoading(false);
     }
@@ -72,9 +79,9 @@ export default function Auth() {
       <Navbar />
       
       <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle>{isLogin ? "Login" : "Sign Up"}</CardTitle>
+            <CardTitle className="text-2xl">{isLogin ? "Login" : "Sign Up"}</CardTitle>
             <CardDescription>
               {isLogin 
                 ? "Access your website builder account" 
@@ -82,9 +89,14 @@ export default function Auth() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAuth} className="space-y-4">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <form onSubmit={handleAuth} className="space-y-5">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -92,10 +104,11 @@ export default function Auth() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="border-gray-300"
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -104,7 +117,7 @@ export default function Auth() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pr-10"
+                    className="pr-10 border-gray-300"
                   />
                   <button 
                     type="button"
@@ -128,6 +141,7 @@ export default function Auth() {
                 setIsLogin(!isLogin);
                 setEmail("");
                 setPassword("");
+                setError("");
               }}
             >
               {isLogin ? "Need an account? Sign Up" : "Already have an account? Login"}

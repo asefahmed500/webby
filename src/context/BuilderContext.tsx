@@ -1,10 +1,10 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { SEOSettings, defaultSEOSettings } from "@/lib/seoUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./AuthProvider";
 import { toast } from "sonner";
-import { Page } from "@/lib/pageData";
 import { Website } from "@/types/database.types";
 
 export type Component = {
@@ -12,7 +12,7 @@ export type Component = {
   type: string;
   content: string;
   styles: Record<string, string>;
-  children: string[];
+  children: Component[];
   parent: string | null;
 };
 
@@ -20,8 +20,9 @@ export type PageType = {
   id: string;
   name: string;
   path: string;
-  components: string[];
+  components: Component[];
   seoSettings: SEOSettings;
+  isHome?: boolean;
 };
 
 export type PublishStatus = "draft" | "published";
@@ -65,6 +66,11 @@ interface BuilderContextType {
   userId: string | null;
   setUserId: React.Dispatch<React.SetStateAction<string | null>>;
   saveWebsite: () => Promise<void>;
+  isDragging: boolean;
+  viewportSize: string;
+  setViewportSize: React.Dispatch<React.SetStateAction<string>>;
+  lastSaved: string | null;
+  isSaving: boolean;
 }
 
 export const BuilderContext = createContext<BuilderContextType>({} as BuilderContextType);
@@ -73,12 +79,14 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
   const [components, setComponents] = useState<Component[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [pages, setPages] = useState<PageType[]>([{
     id: uuidv4(),
     name: "Home",
     path: "/",
     components: [],
     seoSettings: defaultSEOSettings,
+    isHome: true
   }]);
   const [currentPageId, setCurrentPageId] = useState<string>(pages[0].id);
   const [previewMode, setPreviewMode] = useState<boolean>(false);
@@ -91,6 +99,9 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [viewportSize, setViewportSize] = useState<string>("desktop");
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const { user } = useAuth();
 
@@ -104,7 +115,7 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
       parent: parent,
     };
 
-    setComponents([...components, newComponent]);
+    setComponents(prevComponents => [...prevComponents, newComponent]);
 
     // If the component has a parent, update the parent's children array
     if (parent) {
@@ -113,7 +124,7 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
           if (component.id === parent) {
             return {
               ...component,
-              children: [...component.children, newComponent.id],
+              children: [...component.children, newComponent],
             };
           } else {
             return component;
@@ -128,13 +139,16 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         if (page.id === currentPageId) {
           return {
             ...page,
-            components: [...page.components, newComponent.id],
+            components: [...page.components, newComponent],
           };
         } else {
           return page;
         }
       });
     });
+
+    // Log the component addition
+    console.log(`Component added: ${type} (ID: ${newComponent.id})`);
   };
 
   const updateComponent = (id: string, data: Partial<Component>) => {
@@ -181,6 +195,13 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         }
       });
     });
+
+    // If the selected component is being removed, clear the selection
+    if (selectedComponent?.id === id) {
+      setSelectedComponent(null);
+    }
+
+    console.log(`Component removed: ${id}`);
   };
 
   const moveComponent = (dragId: string, dropId: string) => {
@@ -214,7 +235,7 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
       draggedComponent.parent = dropId;
 
       // Add the dragged component to the children of the dropped component
-      droppedComponent.children = [...droppedComponent.children, dragId];
+      droppedComponent.children.push(draggedComponent);
 
       // Return the updated components array
       return updatedComponents.map((c) => {
@@ -227,19 +248,23 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         }
       });
     });
+
+    setIsDragging(false);
   };
 
   const addPage = () => {
     const newPage: PageType = {
       id: uuidv4(),
       name: "New Page",
-      path: "/new-page",
+      path: `/new-page-${Date.now()}`,
       components: [],
       seoSettings: defaultSEOSettings,
+      isHome: false
     };
 
     setPages([...pages, newPage]);
     setCurrentPageId(newPage.id);
+    console.log(`Page added: ${newPage.name} (ID: ${newPage.id})`);
   };
 
   const updatePage = (id: string, data: Partial<PageType>) => {
@@ -255,8 +280,19 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const removePage = (id: string) => {
+    // Don't allow removing the last page
+    if (pages.length <= 1) {
+      toast.error("You must have at least one page");
+      return;
+    }
+
     setPages((prevPages) => {
-      return prevPages.filter((page) => page.id !== id);
+      const filteredPages = prevPages.filter((page) => page.id !== id);
+      // If the current page is being removed, set the current page to the first page
+      if (currentPageId === id) {
+        setCurrentPageId(filteredPages[0].id);
+      }
+      return filteredPages;
     });
   };
 
@@ -330,6 +366,7 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         .limit(1);
       
       if (error) {
+        console.error("Error loading websites:", error);
         throw error;
       }
       
@@ -340,20 +377,56 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         setWebsiteId(website.id);
         setWebsiteName(website.name);
         setWebsiteDescription(website.description);
-        setPages(website.pages as Page[] || []);
+        
+        // Safely parse pages from JSON
+        try {
+          const pagesData = website.pages;
+          if (pagesData && Array.isArray(pagesData)) {
+            setPages(pagesData as unknown as PageType[]);
+            console.info("Loading pages from saved data:", pagesData.length);
+          } else {
+            console.warn("Invalid pages data format:", pagesData);
+            setPages([{
+              id: uuidv4(),
+              name: "Home",
+              path: "/",
+              components: [],
+              seoSettings: defaultSEOSettings,
+              isHome: true
+            }]);
+          }
+        } catch (parseError) {
+          console.error("Error parsing pages data:", parseError);
+          setPages([{
+            id: uuidv4(),
+            name: "Home",
+            path: "/",
+            components: [],
+            seoSettings: defaultSEOSettings,
+            isHome: true
+          }]);
+        }
+        
+        // Set the current page
+        if (pages.length > 0) {
+          setCurrentPageId(pages[0].id);
+          console.info("Setting components from current page: home", pages[0].components?.length || 0);
+        }
+        
+        // Set other website properties
         setCreatedAt(website.created_at);
         setUpdatedAt(website.updated_at);
         setPublishedAt(website.published_at || null);
         setUserId(website.user_id);
         setPublishStatus(website.publish_status as PublishStatus);
-        setSEOSettings(website.seo_settings as SEOSettings);
         
-        // Set the current page
-        if (pages.length > 0) {
-          setCurrentPageId(pages[0].id);
+        // Set SEO settings if available
+        if (website.seo_settings) {
+          setSEOSettings(website.seo_settings as unknown as SEOSettings || defaultSEOSettings);
         }
         
         console.info("Loaded website from Supabase:", website.name);
+        setLastSaved(new Date().toISOString());
       } else {
         console.info("No data found in Supabase, will try localStorage");
         loadFromLocalStorage();
@@ -367,11 +440,15 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
   // Save website to Supabase and localStorage
   const saveWebsite = async () => {
     try {
+      setIsSaving(true);
+      
       // Save to localStorage first (as a backup)
       saveToLocalStorage();
       
       if (!user) {
         console.info("No user logged in, saved to localStorage only");
+        setIsSaving(false);
+        setLastSaved(new Date().toISOString());
         return;
       }
       
@@ -379,7 +456,7 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         id: websiteId || uuidv4(),
         name: websiteName || "My Website",
         description: websiteDescription || "",
-        pages,
+        pages: pages,
         updated_at: new Date().toISOString(),
         user_id: user.id,
         publish_status: publishStatus,
@@ -396,6 +473,8 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         setWebsiteId(websiteData.id);
       }
       
+      console.log("Saving website to Supabase:", websiteData);
+      
       const { data, error } = await supabase
         .from('websites')
         .upsert(websiteData)
@@ -407,19 +486,24 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
       
       console.info("Website saved to Supabase:", data);
       setUpdatedAt(new Date().toISOString());
+      setLastSaved(new Date().toISOString());
+      toast.success("Website saved successfully!");
     } catch (error) {
       console.error("Error saving website:", error);
       toast.error("Error saving website");
       throw error;
+    } finally {
+      setIsSaving(false);
     }
   };
 
   useEffect(() => {
-    if (draggedComponent && selectedComponent) {
-      moveComponent(draggedComponent, selectedComponent.id);
-      setDraggedComponent(null);
-    }
-  }, [selectedComponent, draggedComponent, moveComponent]);
+    const handleDragStateChange = () => {
+      setIsDragging(!!draggedComponent);
+    };
+    
+    handleDragStateChange();
+  }, [draggedComponent]);
 
   // Initialize
   useEffect(() => {
@@ -468,6 +552,11 @@ export const BuilderProvider = ({ children }: { children: React.ReactNode }) => 
         userId,
         setUserId,
         saveWebsite,
+        isDragging,
+        viewportSize,
+        setViewportSize,
+        lastSaved,
+        isSaving
       }}
     >
       {children}
