@@ -8,7 +8,7 @@ import {
   LayoutGrid,
   SplitSquareVertical,
   Navigation,
-  Footer as FooterIcon,
+  PanelBottom as FooterIcon,
   Phone,
   Mail,
   FileText,
@@ -190,4 +190,53 @@ export const componentCategories = [
       },
     ],
   },
+];
+
+// Adding these missing exports for Canvas and ComponentSidebar
+export const componentTypes = [
+  { type: "heading", label: "Heading", icon: "heading-1" },
+  { type: "text", label: "Text", icon: "text" },
+  { type: "image", label: "Image", icon: "image" },
+  { type: "button", label: "Button", icon: "square" },
+  { type: "container", label: "Container", icon: "layout" },
+  { type: "columns", label: "Columns", icon: "panel-right" },
+  { type: "grid", label: "Grid", icon: "grid" },
+  { type: "divider", label: "Divider", icon: "minus" },
+  { type: "navigation", label: "Navigation", icon: "navigation" },
+  { type: "footer", label: "Footer", icon: "panel-bottom" }
+];
+
+export const templates = [
+  {
+    id: "hero-section",
+    name: "Hero Section",
+    category: "hero",
+    description: "A prominent banner section with title, subtitle and CTA",
+    thumbnail: "layout-dashboard",
+    components: []
+  },
+  {
+    id: "feature-grid",
+    name: "Feature Grid",
+    category: "features",
+    description: "Display features in a responsive grid",
+    thumbnail: "grid",
+    components: []
+  },
+  {
+    id: "testimonial-slider",
+    name: "Testimonial Slider",
+    category: "testimonials",
+    description: "Customer testimonials in a slider format",
+    thumbnail: "quote",
+    components: []
+  },
+  {
+    id: "footer-simple",
+    name: "Simple Footer",
+    category: "footer",
+    description: "A simple footer with links and copyright",
+    thumbnail: "panel-bottom",
+    components: []
+  }
 ];
